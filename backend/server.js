@@ -65,8 +65,8 @@ app.use(
 );
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-// Hafta 3'te aktif edilecek:
-// app.use('/api/auth', require('./src/routes/auth.routes'));
+app.use('/api/auth', require('./src/routes/auth.routes'));
+// Hafta 4-7'de aktif edilecek:
 // app.use('/api/imports', require('./src/routes/import.routes'));
 // app.use('/api/kpi', require('./src/routes/kpi.routes'));
 // app.use('/api/dashboard', require('./src/routes/dashboard.routes'));
