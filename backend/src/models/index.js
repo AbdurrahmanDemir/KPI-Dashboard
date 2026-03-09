@@ -1,0 +1,71 @@
+/**
+ * Sequelize Modelleri — Merkezi Index
+ * Tüm modelleri ve aralarındaki ilişkileri tanımlar
+ */
+
+const { sequelize } = require('../config/database');
+
+// ─── Modelleri Yükle ──────────────────────────────────────────────────────────
+const User = require('./User');
+const ImportLog = require('./ImportLog');
+const TrafficData = require('./TrafficData');
+const AdsData = require('./AdsData');
+const SalesData = require('./SalesData');
+const CampaignData = require('./CampaignData');
+const ChannelMapping = require('./ChannelMapping');
+const FunnelData = require('./FunnelData');
+const KpiCache = require('./KpiCache');
+const SavedView = require('./SavedView');
+const Segment = require('./Segment');
+const AuditLog = require('./AuditLog');
+
+// ─── İlişkiler ────────────────────────────────────────────────────────────────
+
+// User → ImportLog (1:N)
+User.hasMany(ImportLog, { foreignKey: 'user_id', as: 'imports' });
+ImportLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// User → SavedView (1:N)
+User.hasMany(SavedView, { foreignKey: 'user_id', as: 'saved_views' });
+SavedView.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// User → Segment (1:N)
+User.hasMany(Segment, { foreignKey: 'user_id', as: 'segments' });
+Segment.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// User → AuditLog (1:N)
+User.hasMany(AuditLog, { foreignKey: 'user_id', as: 'audit_logs' });
+AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// ImportLog → TrafficData (1:N)
+ImportLog.hasMany(TrafficData, { foreignKey: 'import_id', as: 'traffic_data' });
+TrafficData.belongsTo(ImportLog, { foreignKey: 'import_id', as: 'import' });
+
+// ImportLog → AdsData (1:N)
+ImportLog.hasMany(AdsData, { foreignKey: 'import_id', as: 'ads_data' });
+AdsData.belongsTo(ImportLog, { foreignKey: 'import_id', as: 'import' });
+
+// ImportLog → SalesData (1:N)
+ImportLog.hasMany(SalesData, { foreignKey: 'import_id', as: 'sales_data' });
+SalesData.belongsTo(ImportLog, { foreignKey: 'import_id', as: 'import' });
+
+// ImportLog → FunnelData (1:N)
+ImportLog.hasMany(FunnelData, { foreignKey: 'import_id', as: 'funnel_data' });
+FunnelData.belongsTo(ImportLog, { foreignKey: 'import_id', as: 'import' });
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+module.exports = {
+    sequelize,
+    User,
+    ImportLog,
+    TrafficData,
+    AdsData,
+    SalesData,
+    CampaignData,
+    ChannelMapping,
+    FunnelData,
+    KpiCache,
+    SavedView,
+    Segment,
+    AuditLog,
+};
