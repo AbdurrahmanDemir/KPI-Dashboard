@@ -67,15 +67,15 @@ app.use(
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', require('./src/routes/auth.routes'));
 // Hafta 4-7'de aktif edilecek:
-// app.use('/api/imports', require('./src/routes/import.routes'));
-// app.use('/api/kpi', require('./src/routes/kpi.routes'));
+app.use('/api/imports', require('./src/routes/import.routes'));
+app.use('/api/kpi', require('./src/routes/kpi.routes'));
 // app.use('/api/dashboard', require('./src/routes/dashboard.routes'));
 // app.use('/api/filters', require('./src/routes/filter.routes'));
-// app.use('/api/views', require('./src/routes/view.routes'));
-// app.use('/api/segments', require('./src/routes/segment.routes'));
-// app.use('/api/export', require('./src/routes/export.routes'));
-// app.use('/api/logs', require('./src/routes/log.routes'));
-// app.use('/api/mappings', require('./src/routes/mapping.routes'));
+app.use('/api/views', require('./src/routes/view.routes'));
+app.use('/api/segments', require('./src/routes/segment.routes'));
+app.use('/api/users', require('./src/routes/user.routes'));
+app.use('/api/export', require('./src/routes/export.routes'));
+app.use('/api/logs', require('./src/routes/log.routes'));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {

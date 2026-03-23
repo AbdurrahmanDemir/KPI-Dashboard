@@ -42,9 +42,13 @@ const ImportLog = sequelize.define(
             defaultValue: 0,
         },
         status: {
-            type: DataTypes.ENUM('pending', 'processing', 'completed', 'failed'),
+            type: DataTypes.ENUM('pending', 'mapping', 'processing', 'completed', 'failed'),
             allowNull: false,
             defaultValue: 'pending',
+        },
+        mapping_config: {
+            type: DataTypes.JSON,
+            allowNull: true,
         },
         error_detail: {
             type: DataTypes.JSON,

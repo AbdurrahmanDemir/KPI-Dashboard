@@ -19,7 +19,7 @@ const syncDB = async () => {
 
         // force: false → mevcut tabloları silmez, sadece eksikleri ekler
         // alter: true  → mevcut tablolara yeni kolonlar ekler
-        await sequelize.sync({ force: false, alter: false });
+        await sequelize.sync({ force: false, alter: true });
 
         console.log('✅ Tüm tablolar başarıyla oluşturuldu:\n');
 

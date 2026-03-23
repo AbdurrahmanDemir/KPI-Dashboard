@@ -1,0 +1,490 @@
+
+> kpi-dashboard-backend@2.0.0 dev
+> nodemon server.js
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+Executing (default): SELECT `id`, `name`, `email`, `password_hash`, `role`, `last_login`, `is_active`, `created_at`, `updated_at` FROM `users` AS `User` WHERE `User`.`id` = 1;
+[0mGET /api/auth/me [32m200[0m 20.339 ms - 292[0m
+Executing (default): SELECT `id`, `name`, `email`, `password_hash`, `role`, `last_login`, `is_active`, `created_at`, `updated_at` FROM `users` AS `User` WHERE `User`.`id` = 1;
+[0mGET /api/auth/me [32m200[0m 4.077 ms - 292[0m
+Executing (default): SELECT `id`, `name`, `email`, `password_hash`, `role`, `last_login`, `is_active`, `created_at`, `updated_at` FROM `users` AS `User` WHERE `User`.`id` = 1;
+[0mGET /api/auth/me [32m200[0m 6.760 ms - 292[0m
+Executing (default): SELECT `id`, `name`, `email`, `password_hash`, `role`, `last_login`, `is_active`, `created_at`, `updated_at` FROM `users` AS `User` WHERE `User`.`id` = 1;
+[0mGET /api/auth/me [32m200[0m 3.176 ms - 292[0m
+Executing (default): INSERT INTO `import_logs` (`id`,`user_id`,`file_name`,`file_type`,`source_type`,`row_count`,`error_count`,`status`,`error_detail`,`created_at`) VALUES (DEFAULT,?,?,?,?,?,?,?,?,?);
+[0mPOST /api/imports [32m200[0m 26.910 ms - 200[0m
+Executing (default): SELECT `id`, `user_id`, `file_name`, `file_type`, `source_type`, `row_count`, `error_count`, `status`, `mapping_config`, `error_detail`, `completed_at`, `created_at` FROM `import_logs` AS `ImportLog` WHERE `ImportLog`.`id` = '1';
+[0mGET /api/imports/1/preview [32m200[0m 24.482 ms - 6464[0m
+Executing (default): SELECT `id`, `user_id`, `file_name`, `file_type`, `source_type`, `row_count`, `error_count`, `status`, `mapping_config`, `error_detail`, `completed_at`, `created_at` FROM `import_logs` AS `ImportLog` WHERE `ImportLog`.`id` = '1';
+Executing (default): UPDATE `import_logs` SET `mapping_config`=?,`status`=? WHERE `id` = ?
+[0mPOST /api/imports/1/map-columns [32m200[0m 8.332 ms - 105[0m
+Executing (default): SELECT `id`, `user_id`, `file_name`, `file_type`, `source_type`, `row_count`, `error_count`, `status`, `mapping_config`, `error_detail`, `completed_at`, `created_at` FROM `import_logs` AS `ImportLog` WHERE `ImportLog`.`id` = '1';
+Executing (default): UPDATE `import_logs` SET `status`=?,`error_detail`=? WHERE `id` = ?
+[0mPOST /api/imports/1/validate [32m200[0m 6.710 ms - 109[0m
+Executing (default): SELECT `id`, `user_id`, `file_name`, `file_type`, `source_type`, `row_count`, `error_count`, `status`, `mapping_config`, `error_detail`, `completed_at`, `created_at` FROM `import_logs` AS `ImportLog` WHERE `ImportLog`.`id` = '1';
+Executing (default): UPDATE `import_logs` SET `status`=?,`completed_at`=?,`row_count`=? WHERE `id` = ?
+[0mPOST /api/imports/1/commit [32m200[0m 9.425 ms - 130[0m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+Executing (default): SELECT `id`, `name`, `email`, `password_hash`, `role`, `last_login`, `is_active`, `created_at`, `updated_at` FROM `users` AS `User` WHERE `User`.`id` = 1;
+Executing (default): SELECT `id`, `kpi_type`, `date_start`, `date_end`, `filters_hash`, `value`, `calculated_at`, `expires_at` FROM `kpi_cache` AS `KpiCache` WHERE `KpiCache`.`kpi_type` = 'summary' AND `KpiCache`.`date_start` = '2026-02-21' AND `KpiCache`.`date_end` = '2026-03-23' AND `KpiCache`.`filters_hash` = 'ef97eef0b30f69fca2822befba08436e' AND `KpiCache`.`expires_at` > '2026-03-23 19:25:44' LIMIT 1;
+[0mGET /api/auth/me [32m200[0m 26.316 ms - 292[0m
+[0mGET /api/kpi/summary?start_date=2026-02-21&end_date=2026-03-23&channel=&platform=&campaign_name=&city= [32m200[0m 22.873 ms - 453[0m
+Executing (default): SELECT `id`, `name`, `email`, `password_hash`, `role`, `last_login`, `is_active`, `created_at`, `updated_at` FROM `users` AS `User` WHERE `User`.`id` = 1;
+[0mGET /api/auth/me [32m200[0m 3.640 ms - 292[0m
+Executing (default): SELECT `id`, `name`, `email`, `password_hash`, `role`, `last_login`, `is_active`, `created_at`, `updated_at` FROM `users` AS `User` WHERE `User`.`id` = 1;
+[0mGET /api/auth/me [32m200[0m 8.889 ms - 292[0m
+Executing (default): SELECT `id`, `name`, `email`, `password_hash`, `role`, `last_login`, `is_active`, `created_at`, `updated_at` FROM `users` AS `User` WHERE `User`.`id` = 1;
+[0mGET /api/auth/me [32m200[0m 4.151 ms - 292[0m
+Executing (default): SELECT SUM(`sessions`) AS `total_sessions`, SUM(`users`) AS `total_users`, SUM(`new_users`) AS `total_new_users`, AVG(`bounce_rate`) AS `avg_bounce_rate`, AVG(`avg_session_duration`) AS `avg_duration`, AVG(`pages_per_session`) AS `avg_pages_per_session`, SUM(`conversions`) AS `total_conversions` FROM `traffic_data` AS `TrafficData` WHERE `TrafficData`.`date` BETWEEN '2026-02-21' AND '2026-03-23' LIMIT 1;
+Executing (default): SELECT SUM(`spend`) AS `total_spend`, SUM(`impressions`) AS `total_impressions`, SUM(`clicks`) AS `total_clicks`, SUM(`reach`) AS `total_reach`, SUM(`conversions`) AS `total_conversions`, SUM(`conversion_value`) AS `total_conversion_value` FROM `ads_data` AS `AdsData` WHERE `AdsData`.`date` BETWEEN '2026-02-21' AND '2026-03-23' LIMIT 1;
+Executing (default): SELECT SUM(`order_revenue`) AS `total_revenue`, COUNT(`id`) AS `total_orders`, SUM(`product_count`) AS `total_items_sold`, COUNT(DISTINCT(`customer_id`)) AS `unique_customers` FROM `sales_data` AS `SalesData` WHERE `SalesData`.`order_date` BETWEEN '2026-02-21' AND '2026-03-23' AND `SalesData`.`order_status` = 'completed' LIMIT 1;
+Executing (default): SELECT SUM(`refund_amount`) AS `total_refund`, COUNT(`id`) AS `total_refund_orders` FROM `sales_data` AS `SalesData` WHERE `SalesData`.`order_date` BETWEEN '2026-02-21' AND '2026-03-23' AND `SalesData`.`order_status` = 'refunded' LIMIT 1;
+[0mGET /api/export/pdf?start_date=2026-02-21&end_date=2026-03-23&channel=&platform=&campaign_name=&city= [32m200[0m 38.161 ms - -[0m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Executing (default): SELECT 1+1 AS result
+✅ MySQL bağlantısı başarılı.
+
+🚀 KPI Dashboard API çalışıyor
+   ├── Server:  http://localhost:3001
+   ├── Swagger: http://localhost:3001/api-docs
+   ├── Health:  http://localhost:3001/health
+   └── ENV:     development
+
+[32m[nodemon] clean exit - waiting for changes before restart[39m

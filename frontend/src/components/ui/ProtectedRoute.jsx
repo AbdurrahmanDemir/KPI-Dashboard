@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
+import MainLayout from '../layout/MainLayout';
 
 /**
  * Korumalı Route — Giriş yapılmamışsa login'e yönlendirir
@@ -32,5 +33,5 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
         return <Navigate to="/" replace />;
     }
 
-    return children;
+    return <MainLayout>{children}</MainLayout>;
 }

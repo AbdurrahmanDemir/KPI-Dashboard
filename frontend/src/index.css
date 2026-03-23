@@ -1,12 +1,48 @@
 @import "tailwindcss";
 
 /* ─── CSS Custom Properties (Design Tokens) ─────────────────────────────────── */
-:root {
-  /* Renkler */
+:root, .light {
+  /* Renkler (Spike Admin Light Teması) */
+  --color-bg-primary: #f0f5f9;
+  --color-bg-secondary: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #f6f9fc;
+  --color-bg-tertiary: #f6f9fc;
+
+  --color-accent-primary: #0085db;
+  --color-accent-secondary: #8763da;
+  --color-accent-success: #4bd08b;
+  --color-accent-warning: #f8c076;
+  --color-accent-danger: #fb977d;
+
+  --color-text-primary: #2A3547;
+  --color-text-secondary: #5a6a85;
+  --color-text-muted: #707a82;
+
+  --color-border: #e5eaef;
+  --color-border-light: #DFE5EF;
+
+  /* Tipografi */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  /* Spacing & Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-card: 0 2px 6px rgba(37, 83, 185, 0.1);
+  --shadow-glow: 0 0 20px rgba(0, 133, 219, 0.15);
+}
+
+.dark {
+  /* Renkler (Bizim orijinal Dark Temamız / Spike Dark Teması) */
   --color-bg-primary: #0f1117;
   --color-bg-secondary: #161b27;
   --color-bg-card: #1e2535;
   --color-bg-hover: #252d3d;
+  --color-bg-tertiary: #1e2535;
 
   --color-accent-primary: #6366f1;
   --color-accent-secondary: #8b5cf6;
@@ -21,16 +57,6 @@
   --color-border: #2d3748;
   --color-border-light: #374151;
 
-  /* Tipografi */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-
-  /* Spacing */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-
-  /* Shadows */
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
   --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
 }
