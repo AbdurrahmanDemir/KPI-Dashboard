@@ -38,6 +38,30 @@ const SalesData = sequelize.define(
             type: DataTypes.STRING(100),
             allowNull: false,
         },
+        source: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
+        medium: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
+        campaign_name: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        product_name: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        product_category: {
+            type: DataTypes.STRING(150),
+            allowNull: true,
+        },
+        product_sku: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
         product_count: {
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: false,
@@ -67,6 +91,15 @@ const SalesData = sequelize.define(
             type: DataTypes.STRING(50),
             allowNull: true,
         },
+        attribution_source: {
+            type: DataTypes.ENUM('analytics', 'ads_platform', 'manual'),
+            allowNull: false,
+            defaultValue: 'analytics',
+        },
+        raw_payload: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
         import_id: {
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: true,
@@ -81,6 +114,11 @@ const SalesData = sequelize.define(
             { fields: ['order_date'] },
             { fields: ['customer_id'] },
             { fields: ['channel'] },
+            { fields: ['source'] },
+            { fields: ['medium'] },
+            { fields: ['campaign_name'] },
+            { fields: ['product_name'] },
+            { fields: ['product_category'] },
             { fields: ['city'] },
             { fields: ['country'] },
             { fields: ['order_status'] },

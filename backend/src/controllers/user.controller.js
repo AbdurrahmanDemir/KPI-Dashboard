@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/response');
+const ALLOWED_ROLES = ['admin', 'marketing_manager', 'viewer'];
 
 // ─── GET /users (Admin Only) ───────────────────────────────────────────────────
 const getUsers = async (req, res) => {
@@ -24,6 +25,10 @@ const createUser = async (req, res) => {
             return errorResponse(res, 400, 'USER_EXISTS', 'Bu e-posta kullanımda.');
         }
 
+        if (role && !ALLOWED_ROLES.includes(role)) {
+            return errorResponse(res, 400, 'INVALID_ROLE', 'Gecersiz kullanici rolu secildi.');
+        }
+
         const user = await User.create({ name, email, password_hash: password, role: role || 'viewer' });
         
         // Şifreyi dönerken gizle
@@ -42,7 +47,13 @@ const changeRole = async (req, res) => {
         
         if (!user) return errorResponse(res, 404, 'NOT_FOUND', 'Kullanıcı bulunamadı.');
 
-        if (role) user.role = role;
+        if (role) {
+            if (!ALLOWED_ROLES.includes(role)) {
+                return errorResponse(res, 400, 'INVALID_ROLE', 'Gecersiz kullanici rolu secildi.');
+            }
+
+            user.role = role;
+        }
         if (typeof is_active !== 'undefined') user.is_active = is_active;
         
         await user.save();

@@ -10,23 +10,22 @@ import DonutChart from '../components/charts/DonutChart';
 
 export default function DashboardPage() {
     const { filters } = useFilterStore();
+    const queryString = new URLSearchParams(filters).toString();
 
     // Query 1: Özet KPI'lar
     const { data: summaryData, isLoading: isSummaryLoading, error: summaryError } = useQuery({
-        queryKey: ['kpi-summary', filters],
+        queryKey: ['kpi-summary', queryString],
         queryFn: async () => {
-            const params = new URLSearchParams(filters).toString();
-            const res = await api.get(`/kpi/summary?${params}`);
+            const res = await api.get(`/kpi/summary?${queryString}`);
             return res.data.data;
         }
     });
 
     // Query 2: Trend Verisi
     const { data: trendData, isLoading: isTrendLoading } = useQuery({
-        queryKey: ['kpi-trend', filters],
+        queryKey: ['kpi-trend', queryString],
         queryFn: async () => {
-            const params = new URLSearchParams(filters).toString();
-            const res = await api.get(`/kpi/trend?${params}`);
+            const res = await api.get(`/kpi/trend?${queryString}`);
             return res.data.data;
         }
     });
@@ -50,6 +49,8 @@ export default function DashboardPage() {
     const s = summaryData?.sales || {};
     const t = summaryData?.traffic || {};
     const a = summaryData?.ads || {};
+    const channelPerformance = summaryData?.breakdowns?.channel_performance || [];
+    const platformDistribution = summaryData?.breakdowns?.platform_distribution || [];
 
     return (
         <div style={{ padding: '24px', fontFamily: 'var(--font-sans)', color: 'var(--color-text-primary)' }}>
@@ -88,54 +89,46 @@ export default function DashboardPage() {
                     title="Toplam Ciro" 
                     value={s.revenue || 0} 
                     prefix="₺" 
-                    change={12.5} 
                     isLoading={isSummaryLoading} 
                 />
                 <KpiCard 
                     title="Toplam Sipariş" 
                     value={s.orders || 0} 
-                    change={8.2} 
                     isLoading={isSummaryLoading} 
                 />
                 <KpiCard 
                     title="Satış Dönüşüm Oranı (CVR)" 
                     value={t.cvr || 0} 
                     suffix="%" 
-                    change={-1.4} 
                     isLoading={isSummaryLoading} 
                 />
                 <KpiCard 
                     title="Maliyet / Ciro (ROAS)" 
                     value={a.roas || 0} 
                     prefix="" 
-                    change={3.1} 
                     isLoading={isSummaryLoading} 
                 />
                 <KpiCard 
                     title="Reklam Harcaması" 
                     value={a.spend || 0} 
                     prefix="₺" 
-                    change={-5.2} 
                     isLoading={isSummaryLoading} 
                 />
                 <KpiCard 
                     title="Tıklama Maliyeti (CPC)" 
                     value={a.cpc || 0} 
                     prefix="₺" 
-                    change={2.1} 
                     isLoading={isSummaryLoading} 
                 />
                 <KpiCard 
                     title="Toplam Ziyaretçi" 
                     value={t.sessions || 0} 
-                    change={15.4} 
                     isLoading={isSummaryLoading} 
                 />
                 <KpiCard 
                     title="Siparişte İade Oranı" 
                     value={s.refund_rate || 0} 
                     suffix="%" 
-                    change={-0.5} 
                     isLoading={isSummaryLoading} 
                 />
             </div>
@@ -145,23 +138,12 @@ export default function DashboardPage() {
                 <TrendChart data={trendData} isLoading={isTrendLoading} />
                 <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
                     <BarChart 
-                        isLoading={false}
-                        data={[
-                            { channel: 'Meta Ads', revenue: 45000 },
-                            { channel: 'Google Ads', revenue: 68000 },
-                            { channel: 'Organic', revenue: 25000 },
-                            { channel: 'Direct', revenue: 15000 },
-                            { channel: 'Email', revenue: 8500 },
-                        ]} 
+                        isLoading={isSummaryLoading}
+                        data={channelPerformance} 
                     />
                     <DonutChart 
-                        isLoading={false}
-                        data={[
-                            { platform: 'Google', sessions: 12500 },
-                            { platform: 'Meta', sessions: 8400 },
-                            { platform: 'Direct', sessions: 3200 },
-                            { platform: 'Other', sessions: 1500 },
-                        ]} 
+                        isLoading={isSummaryLoading}
+                        data={platformDistribution} 
                     />
                 </div>
             </div>

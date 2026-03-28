@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getSegments, createSegment, deleteSegment } = require('../controllers/segment.controller');
+const { getSegments, getSegmentById, createSegment, updateSegment, previewSegment, applySegment, deleteSegment } = require('../controllers/segment.controller');
 const { authenticate } = require('../middleware/auth');
 
 /**
@@ -23,6 +23,7 @@ const { authenticate } = require('../middleware/auth');
  *         description: Segment listesi
  */
 router.get('/', authenticate, getSegments);
+router.get('/:id', authenticate, getSegmentById);
 
 /**
  * @swagger
@@ -49,6 +50,9 @@ router.get('/', authenticate, getSegments);
  *         description: Oluşturulan segment objesi
  */
 router.post('/', authenticate, createSegment);
+router.put('/:id', authenticate, updateSegment);
+router.get('/:id/preview', authenticate, previewSegment);
+router.post('/:id/apply', authenticate, applySegment);
 
 /**
  * @swagger

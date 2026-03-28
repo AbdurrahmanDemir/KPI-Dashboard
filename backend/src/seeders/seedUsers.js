@@ -1,6 +1,6 @@
 /**
- * Seed: users tablosuna admin + viewer hesapları ekle
- * Çalıştırma: node src/seeders/seedUsers.js
+ * Seed: users tablosuna admin + marketing + viewer hesaplari ekle
+ * Calistirma: node src/seeders/seedUsers.js
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
@@ -11,28 +11,35 @@ const User = require('../models/User');
 
 const users = [
     {
-        name: 'Admin Kullanıcı',
+        name: 'Admin Kullanici',
         email: 'admin@kpidashboard.com',
         password_hash: 'admin123',
         role: 'admin',
         is_active: true,
     },
     {
-        name: 'Viewer Kullanıcı',
+        name: 'Pazarlama Yetkilisi',
+        email: 'marketing@kpidashboard.com',
+        password_hash: 'marketing123',
+        role: 'marketing_manager',
+        is_active: true,
+    },
+    {
+        name: 'Viewer Kullanici',
         email: 'viewer@kpidashboard.com',
         password_hash: 'viewer123',
         role: 'viewer',
         is_active: true,
     },
     {
-        name: 'Emre Yavşan',
+        name: 'Emre Yavsan',
         email: 'emre.yavsan@sporthink.com.tr',
         password_hash: 'sporthink2024',
         role: 'admin',
         is_active: true,
     },
     {
-        name: 'Mert Gülseren',
+        name: 'Mert Gulseren',
         email: 'mert.gulseren@sporthink.com.tr',
         password_hash: 'sporthink2024',
         role: 'admin',
@@ -43,7 +50,7 @@ const users = [
 (async () => {
     try {
         await sequelize.authenticate();
-        console.log('✅ DB bağlantısı OK\n');
+        console.log('DB baglantisi OK\n');
 
         for (const u of users) {
             const [user, created] = await User.findOrCreate({
@@ -52,19 +59,20 @@ const users = [
             });
 
             if (created) {
-                console.log(`   ✅ Oluşturuldu: ${user.name} (${user.role}) — ${user.email}`);
+                console.log(`Olusturuldu: ${user.name} (${user.role}) - ${user.email}`);
             } else {
-                console.log(`   ⏭️  Zaten var:   ${user.name} (${user.role}) — ${user.email}`);
+                console.log(`Zaten var: ${user.name} (${user.role}) - ${user.email}`);
             }
         }
 
-        console.log('\n🎉 Seed tamamlandı!\n');
-        console.log('📝 Giriş bilgileri:');
-        console.log('   Admin:  admin@kpidashboard.com / admin123');
-        console.log('   Viewer: viewer@kpidashboard.com / viewer123');
+        console.log('\nSeed tamamlandi.\n');
+        console.log('Giris bilgileri:');
+        console.log('Admin: admin@kpidashboard.com / admin123');
+        console.log('Marketing: marketing@kpidashboard.com / marketing123');
+        console.log('Viewer: viewer@kpidashboard.com / viewer123');
         process.exit(0);
     } catch (err) {
-        console.error('❌ Hata:', err.message);
+        console.error('Hata:', err.message);
         process.exit(1);
     }
 })();

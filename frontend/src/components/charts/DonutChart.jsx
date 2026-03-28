@@ -3,11 +3,22 @@ import Chart from 'react-apexcharts';
 
 export default function DonutChart({ data = [], isLoading }) {
     if (isLoading) {
-        return <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Grafik Yükleniyor...</div>;
+        return <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Grafik Yukleniyor...</div>;
     }
 
-    const series = data.map(d => parseInt(d.sessions));
-    const labels = data.map(d => d.platform);
+    if (data.length === 0) {
+        return (
+            <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>Platform Dagilimi</h3>
+                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>
+                    Gosterilecek veri bulunamadi.
+                </div>
+            </div>
+        );
+    }
+
+    const series = data.map((d) => parseInt(d.sessions, 10));
+    const labels = data.map((d) => d.platform);
 
     const options = {
         chart: {
@@ -15,8 +26,8 @@ export default function DonutChart({ data = [], isLoading }) {
             fontFamily: 'var(--font-sans)',
             background: 'transparent',
         },
-        labels: labels,
-        colors: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+        labels,
+        colors: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#0ea5e9', '#8b5cf6'],
         plotOptions: {
             pie: {
                 donut: {
@@ -25,10 +36,10 @@ export default function DonutChart({ data = [], isLoading }) {
                         show: true,
                         name: { color: 'var(--color-text-muted)' },
                         value: { color: 'var(--color-text-primary)' },
-                        total: { 
-                            show: true, 
+                        total: {
+                            show: true,
                             color: 'var(--color-text-primary)',
-                            label: 'Oturumlar'
+                            label: 'Toplam'
                         }
                     }
                 }
@@ -39,14 +50,14 @@ export default function DonutChart({ data = [], isLoading }) {
             labels: { colors: 'var(--color-text-primary)' }
         },
         stroke: { show: false },
-        theme: { mode: 'dark' },
+        theme: { mode: 'light' },
         dataLabels: { enabled: false },
-        tooltip: { theme: 'dark' }
+        tooltip: { theme: 'light' }
     };
 
     return (
         <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>Platform Dağılımı (Oturum)</h3>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>Platform Dagilimi</h3>
             <Chart options={options} series={series} type="donut" height={300} />
         </div>
     );

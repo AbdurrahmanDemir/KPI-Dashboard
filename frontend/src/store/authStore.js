@@ -38,7 +38,9 @@ const useAuthStore = create((set, get) => ({
     // ─── Çıkış ──────────────────────────────────────────────────────────────────
     logout: async () => {
         try {
-            await api.post('/auth/logout');
+            await api.post('/auth/logout', {
+                refresh_token: localStorage.getItem('refresh_token')
+            });
         } catch (_) { }
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');

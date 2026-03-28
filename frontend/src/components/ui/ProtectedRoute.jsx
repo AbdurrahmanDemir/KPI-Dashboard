@@ -6,7 +6,7 @@ import MainLayout from '../layout/MainLayout';
 /**
  * Korumalı Route — Giriş yapılmamışsa login'e yönlendirir
  */
-export default function ProtectedRoute({ children, requiredRole = null }) {
+export default function ProtectedRoute({ children, requiredRole = null, allowedRoles = null }) {
     const { isAuthenticated, isLoading, user } = useAuthStore();
     const location = useLocation();
 
@@ -30,6 +30,10 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
     }
 
     if (requiredRole && user?.role !== requiredRole) {
+        return <Navigate to="/" replace />;
+    }
+
+    if (allowedRoles && !allowedRoles.includes(user?.role)) {
         return <Navigate to="/" replace />;
     }
 

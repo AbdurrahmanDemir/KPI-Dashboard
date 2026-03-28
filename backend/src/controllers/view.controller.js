@@ -15,6 +15,16 @@ const getViews = async (req, res) => {
     }
 };
 
+const getViewById = async (req, res) => {
+    try {
+        const view = await SavedView.findOne({ where: { id: req.params.id, user_id: req.user.id } });
+        if (!view) return errorResponse(res, 404, 'NOT_FOUND', 'Gorunum bulunamadi.');
+        return successResponse(res, view);
+    } catch (err) {
+        return errorResponse(res, 500, 'INTERNAL_ERROR', 'Gorunum getirilemedi.');
+    }
+};
+
 // ─── POST /views ───────────────────────────────────────────────────────────────
 const createView = async (req, res) => {
     try {
@@ -44,6 +54,20 @@ const createView = async (req, res) => {
     }
 };
 
+const updateView = async (req, res) => {
+    try {
+        const view = await SavedView.findOne({ where: { id: req.params.id, user_id: req.user.id } });
+        if (!view) return errorResponse(res, 404, 'NOT_FOUND', 'Gorunum bulunamadi.');
+        if (req.body.is_default) {
+            await SavedView.update({ is_default: false }, { where: { user_id: req.user.id } });
+        }
+        await view.update(req.body);
+        return successResponse(res, view);
+    } catch (err) {
+        return errorResponse(res, 500, 'INTERNAL_ERROR', 'Gorunum guncellenemedi.');
+    }
+};
+
 // ─── DELETE /views/:id ─────────────────────────────────────────────────────────
 const deleteView = async (req, res) => {
     try {
@@ -65,6 +89,8 @@ const deleteView = async (req, res) => {
 
 module.exports = {
     getViews,
+    getViewById,
     createView,
+    updateView,
     deleteView
 };

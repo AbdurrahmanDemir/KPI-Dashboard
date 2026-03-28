@@ -1,8 +1,20 @@
-const { getTrafficKPIs, getAdsKPIs, getSalesKPIs, getTrendData } = require('../services/kpi.service');
+const {
+    getTrafficKPIs,
+    getAdsKPIs,
+    getSalesKPIs,
+    getTrendData,
+    getChannelPerformance,
+    getPlatformDistribution,
+    getMarketingChannelPerformance,
+    getSalesCityPerformance,
+    getProductPerformanceSummary,
+    getAttributionOverview
+} = require('../services/kpi.service');
 const { successResponse, errorResponse } = require('../utils/response');
 const crypto = require('crypto');
 const KpiCache = require('../models/KpiCache');
 const { Op } = require('sequelize');
+const KPI_CACHE_SCHEMA_VERSION = 'v2';
 
 // ─── GET /kpi/summary ──────────────────────────────────────────────────────────
 const getSummary = async (req, res) => {
@@ -13,11 +25,17 @@ const getSummary = async (req, res) => {
             channel: req.query.channel,
             platform: req.query.platform,
             campaign_name: req.query.campaign_name,
+            product_name: req.query.product_name,
             city: req.query.city,
+            device: req.query.device,
+            country: req.query.country,
         };
 
         // 1. Filtreleri standartlaştır ve Hash üret
-        const filterStr = JSON.stringify(filters, Object.keys(filters).sort());
+        const filterStr = JSON.stringify({
+            version: KPI_CACHE_SCHEMA_VERSION,
+            filters
+        });
         const filtersHash = crypto.createHash('md5').update(filterStr).digest('hex');
         
         const kpiType = 'summary';
@@ -40,13 +58,31 @@ const getSummary = async (req, res) => {
         }
 
         // 3. Cache'de yoksa veya süresi dolmuşsa hesapla
-        const [traffic, ads, sales] = await Promise.all([
+        const [traffic, ads, sales, channelPerformance, platformDistribution, marketingChannels, salesByCity, productPerformance, attributionAnalysis] = await Promise.all([
             getTrafficKPIs(filters),
             getAdsKPIs(filters),
-            getSalesKPIs(filters)
+            getSalesKPIs(filters),
+            getChannelPerformance(filters),
+            getPlatformDistribution(filters),
+            getMarketingChannelPerformance(filters),
+            getSalesCityPerformance(filters),
+            getProductPerformanceSummary(filters),
+            getAttributionOverview(filters)
         ]);
 
-        const resultData = { traffic, ads, sales };
+        const resultData = {
+            traffic,
+            ads,
+            sales,
+            breakdowns: {
+                channel_performance: channelPerformance,
+                platform_distribution: platformDistribution,
+                marketing_channels: marketingChannels,
+                sales_by_city: salesByCity,
+                product_performance: productPerformance
+            },
+            attribution: attributionAnalysis
+        };
 
         // 4. Yeni sonucu Cache tablosuna kaydet (Varsa güncelle - UPSERT mantığı için)
         const ttlMinutes = parseInt(process.env.KPI_CACHE_TTL_MINUTES || 15);
@@ -86,7 +122,10 @@ const getTrend = async (req, res) => {
             channel: req.query.channel,
             platform: req.query.platform,
             campaign_name: req.query.campaign_name,
+            product_name: req.query.product_name,
             city: req.query.city,
+            device: req.query.device,
+            country: req.query.country,
         };
 
         const trend = await getTrendData(filters);

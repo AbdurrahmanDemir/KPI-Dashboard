@@ -1,15 +1,13 @@
 const { Op } = require('sequelize');
-const { sequelize } = require('../config/database');
 const TrafficData = require('../models/TrafficData');
 const AdsData = require('../models/AdsData');
 const SalesData = require('../models/SalesData');
 
-/**
- * Filtre oluşturucu
- * @param {Object} filters - start_date, end_date, channel vs.
- */
+const round = (value, digits = 2) => Number(Number(value || 0).toFixed(digits));
+
 const buildWhereClause = (filters, dateField = 'date') => {
     const where = {};
+
     if (filters.start_date && filters.end_date) {
         where[dateField] = { [Op.between]: [filters.start_date, filters.end_date] };
     } else if (filters.start_date) {
@@ -18,192 +16,518 @@ const buildWhereClause = (filters, dateField = 'date') => {
         where[dateField] = { [Op.lte]: filters.end_date };
     }
 
-    if (filters.channel) where.channel = filters.channel;
-    if (filters.platform) where.platform = filters.platform; // Sadece Ads için
+    if (filters.platform) where.platform = filters.platform;
     if (filters.campaign_name) where.campaign_name = filters.campaign_name;
-    if (filters.city) where.city = filters.city; // Sadece Satış için
+    if (filters.product_name) where.product_name = filters.product_name;
+    if (filters.city) where.city = filters.city;
+    if (filters.device) where.device = filters.device;
+    if (filters.country) where.country = filters.country;
 
     return where;
 };
 
-// ─── 1. TRAFİK KPI'LARI ────────────────────────────────────────────────────────
-const getTrafficKPIs = async (filters) => {
-    const where = buildWhereClause(filters);
-    
-    // Ads modelinde channel yok, Traffic modelinde platform yok
-    // Bu yüzden filtreler modele özgü temizlenebilir:
-    const trafficWhere = { ...where };
-    delete trafficWhere.platform;
-    delete trafficWhere.campaign_name;
-    delete trafficWhere.city;
+const normalizeChannel = (value) => {
+    const raw = String(value || '').trim().toLowerCase();
 
-    const result = await TrafficData.findOne({
+    if (!raw) return 'other';
+    if (raw.includes('meta') || raw.includes('facebook') || raw.includes('instagram') || raw.includes('paid social')) return 'meta';
+    if (raw.includes('google_ads') || raw.includes('adwords') || raw.includes('paid search') || raw === 'google') return 'google_ads';
+    if (raw.includes('organic')) return 'organic';
+    if (raw.includes('direct') || raw === '(direct)') return 'direct';
+    if (raw.includes('email') || raw.includes('crm') || raw.includes('newsletter')) return 'email';
+    if (raw.includes('tiktok')) return 'tiktok';
+    if (raw.includes('referral')) return 'referral';
+
+    return raw.replace(/\s+/g, '_');
+};
+
+const toLabel = (channel) => {
+    const labels = {
+        meta: 'Meta Ads',
+        google_ads: 'Google Ads',
+        organic: 'Organic',
+        direct: 'Direct',
+        email: 'Email',
+        tiktok: 'TikTok',
+        referral: 'Referral',
+        other: 'Other'
+    };
+
+    return labels[channel] || channel;
+};
+
+const matchesChannelFilter = (rawValue, filterChannel) => {
+    if (!filterChannel) return true;
+    return normalizeChannel(rawValue) === normalizeChannel(filterChannel);
+};
+
+const getTrafficRows = async (filters) => {
+    const trafficWhere = buildWhereClause(filters);
+    delete trafficWhere.platform;
+    delete trafficWhere.country;
+    delete trafficWhere.product_name;
+
+    const rows = await TrafficData.findAll({
         where: trafficWhere,
         attributes: [
-            [sequelize.fn('SUM', sequelize.col('sessions')), 'total_sessions'],
-            [sequelize.fn('SUM', sequelize.col('users')), 'total_users'],
-            [sequelize.fn('SUM', sequelize.col('new_users')), 'total_new_users'],
-            [sequelize.fn('AVG', sequelize.col('bounce_rate')), 'avg_bounce_rate'],
-            [sequelize.fn('AVG', sequelize.col('avg_session_duration')), 'avg_duration'],
-            [sequelize.fn('AVG', sequelize.col('pages_per_session')), 'avg_pages_per_session'],
-            [sequelize.fn('SUM', sequelize.col('conversions')), 'total_conversions'],
+            'date',
+            'channel',
+            'campaign_name',
+            'sessions',
+            'users',
+            'new_users',
+            'bounce_rate',
+            'avg_session_duration',
+            'pages_per_session',
+            'pages_viewed',
+            'conversions'
         ],
-        raw: true,
+        raw: true
     });
 
-    const sessions = parseInt(result.total_sessions || 0);
-    const conversions = parseInt(result.total_conversions || 0);
-    const cvr = sessions > 0 ? (conversions / sessions) * 100 : 0;
-
-    return {
-        sessions,
-        users: parseInt(result.total_users || 0),
-        new_users: parseInt(result.total_new_users || 0),
-        bounce_rate: parseFloat(result.avg_bounce_rate || 0),
-        avg_duration: parseFloat(result.avg_duration || 0),
-        pages_per_session: parseFloat(result.avg_pages_per_session || 0),
-        cvr: parseFloat(cvr.toFixed(2)),
-    };
+    return rows.filter((row) => matchesChannelFilter(row.channel, filters.channel));
 };
 
-// ─── 2. REKLAM KPI'LARI ────────────────────────────────────────────────────────
-const getAdsKPIs = async (filters) => {
-    const where = buildWhereClause(filters);
-    
-    const adsWhere = { ...where };
-    delete adsWhere.channel;
+const getAdsRows = async (filters) => {
+    const adsWhere = buildWhereClause(filters);
     delete adsWhere.city;
+    delete adsWhere.device;
+    delete adsWhere.country;
+    delete adsWhere.product_name;
 
-    const result = await AdsData.findOne({
+    const rows = await AdsData.findAll({
         where: adsWhere,
         attributes: [
-            [sequelize.fn('SUM', sequelize.col('spend')), 'total_spend'],
-            [sequelize.fn('SUM', sequelize.col('impressions')), 'total_impressions'],
-            [sequelize.fn('SUM', sequelize.col('clicks')), 'total_clicks'],
-            [sequelize.fn('SUM', sequelize.col('reach')), 'total_reach'],
-            [sequelize.fn('SUM', sequelize.col('conversions')), 'total_conversions'],
-            [sequelize.fn('SUM', sequelize.col('conversion_value')), 'total_conversion_value'],
+            'date',
+            'platform',
+            'campaign_name',
+            'spend',
+            'impressions',
+            'clicks',
+            'reach',
+            'conversions',
+            'conversion_value'
         ],
-        raw: true,
+        raw: true
     });
 
-    const spend = parseFloat(result.total_spend || 0);
-    const impressions = parseInt(result.total_impressions || 0);
-    const clicks = parseInt(result.total_clicks || 0);
-    const conversions = parseInt(result.total_conversions || 0);
-    const convValue = parseFloat(result.total_conversion_value || 0);
-    const reach = parseInt(result.total_reach || 0);
-
-    const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-    const cpc = clicks > 0 ? (spend / clicks) : 0;
-    const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0;
-    const cost_per_conversion = conversions > 0 ? (spend / conversions) : 0;
-    const roas = spend > 0 ? (convValue / spend) : 0;
-    const frequency = reach > 0 ? (impressions / reach) : 0;
-
-    return {
-        spend,
-        impressions,
-        clicks,
-        ctr: parseFloat(ctr.toFixed(2)),
-        cpc: parseFloat(cpc.toFixed(2)),
-        cpm: parseFloat(cpm.toFixed(2)),
-        conversions,
-        cost_per_conversion: parseFloat(cost_per_conversion.toFixed(2)),
-        roas: parseFloat(roas.toFixed(2)),
-        frequency: parseFloat(frequency.toFixed(2)),
-    };
+    return rows.filter((row) => matchesChannelFilter(row.platform, filters.channel));
 };
 
-// ─── 3. SATIŞ KPI'LARI ─────────────────────────────────────────────────────────
-const getSalesKPIs = async (filters) => {
-    const where = buildWhereClause(filters, 'order_date');
-    
-    const salesWhere = { ...where };
+const getSalesRows = async (filters, completedOnly = false) => {
+    const salesWhere = buildWhereClause(filters, 'order_date');
     delete salesWhere.platform;
-    delete salesWhere.campaign_name;
-    // Sadece tamamlanmış siparişleri baz alıyoruz
-    salesWhere.order_status = 'completed';
 
-    const result = await SalesData.findOne({
-        where: salesWhere,
-        attributes: [
-            [sequelize.fn('SUM', sequelize.col('order_revenue')), 'total_revenue'],
-            [sequelize.fn('COUNT', sequelize.col('id')), 'total_orders'],
-            [sequelize.fn('SUM', sequelize.col('product_count')), 'total_items_sold'],
-            [sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('customer_id'))), 'unique_customers'],
-        ],
-        raw: true,
-    });
-
-    // İadeler (refunded)
-    const refundWhere = { ...salesWhere, order_status: 'refunded' };
-    const refundResult = await SalesData.findOne({
-        where: refundWhere,
-        attributes: [
-            [sequelize.fn('SUM', sequelize.col('refund_amount')), 'total_refund'],
-            [sequelize.fn('COUNT', sequelize.col('id')), 'total_refund_orders'],
-        ],
-        raw: true,
-    });
-
-    const revenue = parseFloat(result.total_revenue || 0);
-    const orders = parseInt(result.total_orders || 0);
-    const items_sold = parseInt(result.total_items_sold || 0);
-    const unique_customers = parseInt(result.unique_customers || 0);
-    
-    const refund_amount = parseFloat(refundResult.total_refund || 0);
-    const refund_orders = parseInt(refundResult.total_refund_orders || 0);
-
-    const aov = orders > 0 ? (revenue / orders) : 0;
-    const revenue_per_user = unique_customers > 0 ? (revenue / unique_customers) : 0;
-    
-    // Basit Repeat Purchase Rate tahmini (sipariş sayısı üzerinden)
-    const repeat_purchase_rate = unique_customers > 0 ? ((orders - unique_customers) / unique_customers) * 100 : 0;
-    const refund_rate = orders > 0 ? (refund_orders / (orders + refund_orders)) * 100 : 0;
-
-    return {
-        revenue,
-        orders,
-        items_sold,
-        aov: parseFloat(aov.toFixed(2)),
-        revenue_per_user: parseFloat(revenue_per_user.toFixed(2)),
-        repeat_purchase_rate: parseFloat(Math.max(0, repeat_purchase_rate).toFixed(2)),
-        refund_rate: parseFloat(refund_rate.toFixed(2)),
-        refund_amount,
-    };
-};
-
-// ─── 4. TREND VERİSİ ──────────────────────────────────────────────────────────
-const getTrendData = async (filters) => {
-    // Örnek: Ciro trendi
-    const where = buildWhereClause(filters, 'order_date');
-    const salesWhere = { ...where, order_status: 'completed' };
-    delete salesWhere.platform;
-    delete salesWhere.campaign_name;
-
-    const trends = await SalesData.findAll({
-        where: salesWhere,
+    const rows = await SalesData.findAll({
+        where: completedOnly ? { ...salesWhere, order_status: 'completed' } : salesWhere,
         attributes: [
             'order_date',
-            [sequelize.fn('SUM', sequelize.col('order_revenue')), 'revenue'],
-            [sequelize.fn('COUNT', sequelize.col('id')), 'orders']
+            'channel',
+            'campaign_name',
+            'city',
+            'device',
+            'country',
+            'product_name',
+            'product_category',
+            'product_count',
+            'order_status',
+            'customer_id',
+            'order_revenue',
+            'refund_amount',
+            'attribution_source'
         ],
-        group: ['order_date'],
-        order: [['order_date', 'ASC']],
-        raw: true,
+        raw: true
     });
 
-    return trends.map(t => ({
-        date: t.order_date,
-        revenue: parseFloat(t.revenue || 0),
-        orders: parseInt(t.orders || 0)
-    }));
+    return rows.filter((row) => matchesChannelFilter(row.channel, filters.channel));
+};
+
+const buildAttributionRows = (trafficRows, adsRows, salesRows, filters) => {
+    const grouped = {};
+
+    for (const row of adsRows) {
+        const key = normalizeChannel(row.platform);
+        grouped[key] ||= {
+            id: key,
+            channel: toLabel(key),
+            spend: 0,
+            impressions: 0,
+            clicks: 0,
+            reach: 0,
+            platform_revenue: 0,
+            platform_conversions: 0,
+            analytics_revenue: 0,
+            analytics_orders: 0,
+            analytics_sessions: 0
+        };
+
+        grouped[key].spend += Number(row.spend || 0);
+        grouped[key].impressions += Number(row.impressions || 0);
+        grouped[key].clicks += Number(row.clicks || 0);
+        grouped[key].reach += Number(row.reach || 0);
+        grouped[key].platform_revenue += Number(row.conversion_value || 0);
+        grouped[key].platform_conversions += Number(row.conversions || 0);
+    }
+
+    for (const row of trafficRows) {
+        const key = normalizeChannel(row.channel);
+        grouped[key] ||= {
+            id: key,
+            channel: toLabel(key),
+            spend: 0,
+            impressions: 0,
+            clicks: 0,
+            reach: 0,
+            platform_revenue: 0,
+            platform_conversions: 0,
+            analytics_revenue: 0,
+            analytics_orders: 0,
+            analytics_sessions: 0
+        };
+
+        grouped[key].analytics_sessions += Number(row.sessions || 0);
+    }
+
+    for (const row of salesRows.filter((item) => item.order_status === 'completed')) {
+        const key = normalizeChannel(row.channel);
+        grouped[key] ||= {
+            id: key,
+            channel: toLabel(key),
+            spend: 0,
+            impressions: 0,
+            clicks: 0,
+            reach: 0,
+            platform_revenue: 0,
+            platform_conversions: 0,
+            analytics_revenue: 0,
+            analytics_orders: 0,
+            analytics_sessions: 0
+        };
+
+        grouped[key].analytics_revenue += Number(row.order_revenue || 0);
+        grouped[key].analytics_orders += 1;
+    }
+
+    const rows = Object.values(grouped)
+        .map((row) => {
+            const ctr = row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0;
+            const analyticsCvr = row.analytics_sessions > 0 ? (row.analytics_orders / row.analytics_sessions) * 100 : 0;
+            const platformRoas = row.spend > 0 ? row.platform_revenue / row.spend : 0;
+            const analyticsRoas = row.spend > 0 ? row.analytics_revenue / row.spend : 0;
+            const attributionGap = row.platform_revenue - row.analytics_revenue;
+
+            let likelyIssue = 'Dengeli';
+            if (row.spend > 0 && row.clicks === 0) {
+                likelyIssue = 'Teslimat var ama tiklama yok';
+            } else if (ctr < 1.2) {
+                likelyIssue = 'Ilgi dusuk: kreatif / hedefleme kontrol edilmeli';
+            } else if (analyticsCvr < 1) {
+                likelyIssue = 'Tiklama var ama satisa donusum zayif';
+            } else if (attributionGap > row.analytics_revenue * 0.25) {
+                likelyIssue = 'Platform gelir iddiasi analytics kaynagindan yuksek';
+            }
+
+            return {
+                ...row,
+                spend: round(row.spend),
+                platform_revenue: round(row.platform_revenue),
+                analytics_revenue: round(row.analytics_revenue),
+                ctr: round(ctr),
+                analytics_cvr: round(analyticsCvr),
+                platform_roas: round(platformRoas),
+                analytics_roas: round(analyticsRoas),
+                attribution_gap: round(attributionGap),
+                source_of_truth: filters.channel ? toLabel(normalizeChannel(filters.channel)) : 'Google Analytics',
+                likely_issue: likelyIssue
+            };
+        })
+        .sort((a, b) => b.analytics_revenue - a.analytics_revenue);
+
+    const totals = rows.reduce((acc, row) => {
+        acc.spend += row.spend;
+        acc.platform_revenue += row.platform_revenue;
+        acc.analytics_revenue += row.analytics_revenue;
+        acc.analytics_orders += row.analytics_orders;
+        acc.analytics_sessions += row.analytics_sessions;
+        return acc;
+    }, {
+        spend: 0,
+        platform_revenue: 0,
+        analytics_revenue: 0,
+        analytics_orders: 0,
+        analytics_sessions: 0
+    });
+
+    return {
+        rows,
+        summary: {
+            source_of_truth: 'Google Analytics',
+            platform_reported_roas: round(totals.spend > 0 ? totals.platform_revenue / totals.spend : 0),
+            analytics_attributed_roas: round(totals.spend > 0 ? totals.analytics_revenue / totals.spend : 0),
+            attribution_gap: round(totals.platform_revenue - totals.analytics_revenue),
+            analytics_cvr: round(totals.analytics_sessions > 0 ? (totals.analytics_orders / totals.analytics_sessions) * 100 : 0)
+        }
+    };
+};
+
+const getTrafficKPIs = async (filters) => {
+    const rows = await getTrafficRows(filters);
+
+    const totals = rows.reduce((acc, row) => {
+        const sessions = Number(row.sessions || 0);
+        acc.sessions += sessions;
+        acc.users += Number(row.users || 0);
+        acc.new_users += Number(row.new_users || 0);
+        acc.conversions += Number(row.conversions || 0);
+        acc.pages_viewed += Number(row.pages_viewed || 0);
+        acc.weighted_duration += Number(row.avg_session_duration || 0) * sessions;
+        acc.bounce_rate_sum += Number(row.bounce_rate || 0);
+        acc.row_count += 1;
+        return acc;
+    }, {
+        sessions: 0,
+        users: 0,
+        new_users: 0,
+        conversions: 0,
+        pages_viewed: 0,
+        weighted_duration: 0,
+        bounce_rate_sum: 0,
+        row_count: 0
+    });
+
+    return {
+        sessions: totals.sessions,
+        users: totals.users,
+        new_users: totals.new_users,
+        bounce_rate: round(totals.row_count > 0 ? totals.bounce_rate_sum / totals.row_count : 0),
+        avg_duration: round(totals.sessions > 0 ? totals.weighted_duration / totals.sessions : 0),
+        pages_per_session: round(totals.sessions > 0 ? totals.pages_viewed / totals.sessions : 0),
+        cvr: round(totals.sessions > 0 ? (totals.conversions / totals.sessions) * 100 : 0)
+    };
+};
+
+const getAdsKPIs = async (filters) => {
+    const rows = await getAdsRows(filters);
+
+    const totals = rows.reduce((acc, row) => {
+        acc.spend += Number(row.spend || 0);
+        acc.impressions += Number(row.impressions || 0);
+        acc.clicks += Number(row.clicks || 0);
+        acc.reach += Number(row.reach || 0);
+        acc.conversions += Number(row.conversions || 0);
+        acc.conversion_value += Number(row.conversion_value || 0);
+        return acc;
+    }, {
+        spend: 0,
+        impressions: 0,
+        clicks: 0,
+        reach: 0,
+        conversions: 0,
+        conversion_value: 0
+    });
+
+    return {
+        spend: round(totals.spend),
+        impressions: totals.impressions,
+        clicks: totals.clicks,
+        ctr: round(totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0),
+        cpc: round(totals.clicks > 0 ? totals.spend / totals.clicks : 0),
+        cpm: round(totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0),
+        conversions: totals.conversions,
+        cost_per_conversion: round(totals.conversions > 0 ? totals.spend / totals.conversions : 0),
+        roas: round(totals.spend > 0 ? totals.conversion_value / totals.spend : 0),
+        frequency: round(totals.reach > 0 ? totals.impressions / totals.reach : 0)
+    };
+};
+
+const getSalesKPIs = async (filters) => {
+    const rows = await getSalesRows(filters);
+    const completedRows = rows.filter((row) => row.order_status === 'completed');
+    const refundedRows = rows.filter((row) => row.order_status === 'refunded');
+    const validRevenueRows = rows.filter((row) => row.order_status !== 'cancelled');
+
+    const revenue = completedRows.reduce((sum, row) => sum + Number(row.order_revenue || 0), 0);
+    const orders = completedRows.length;
+    const itemsSold = completedRows.reduce((sum, row) => sum + Number(row.product_count || 0), 0);
+    const uniqueCustomers = new Set(completedRows.map((row) => row.customer_id).filter(Boolean));
+    const customerOrderCounts = completedRows.reduce((acc, row) => {
+        acc[row.customer_id] = (acc[row.customer_id] || 0) + 1;
+        return acc;
+    }, {});
+    const repeatCustomers = Object.values(customerOrderCounts).filter((count) => count > 1).length;
+    const refundAmount = refundedRows.reduce((sum, row) => sum + Number(row.refund_amount || 0), 0);
+    const totalRelevantRevenue = validRevenueRows.reduce((sum, row) => sum + Number(row.order_revenue || 0), 0);
+
+    return {
+        revenue: round(revenue),
+        orders,
+        items_sold: itemsSold,
+        aov: round(orders > 0 ? revenue / orders : 0),
+        revenue_per_user: round(uniqueCustomers.size > 0 ? revenue / uniqueCustomers.size : 0),
+        repeat_purchase_rate: round(uniqueCustomers.size > 0 ? (repeatCustomers / uniqueCustomers.size) * 100 : 0),
+        refund_rate: round(totalRelevantRevenue > 0 ? (refundAmount / totalRelevantRevenue) * 100 : 0),
+        refund_amount: round(refundAmount)
+    };
+};
+
+const getTrendData = async (filters) => {
+    const rows = await getSalesRows(filters, true);
+
+    const grouped = rows.reduce((acc, row) => {
+        const key = row.order_date;
+        acc[key] ||= { date: key, revenue: 0, orders: 0 };
+        acc[key].revenue += Number(row.order_revenue || 0);
+        acc[key].orders += 1;
+        return acc;
+    }, {});
+
+    return Object.values(grouped)
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+        .map((row) => ({ ...row, revenue: round(row.revenue) }));
+};
+
+const getChannelPerformance = async (filters) => {
+    const rows = await getSalesRows(filters, true);
+
+    const grouped = rows.reduce((acc, row) => {
+        const key = normalizeChannel(row.channel);
+        acc[key] ||= { channel: toLabel(key), revenue: 0 };
+        acc[key].revenue += Number(row.order_revenue || 0);
+        return acc;
+    }, {});
+
+    return Object.values(grouped)
+        .map((row) => ({ ...row, revenue: round(row.revenue) }))
+        .sort((a, b) => b.revenue - a.revenue);
+};
+
+const getPlatformDistribution = async (filters) => {
+    const rows = await getTrafficRows(filters);
+
+    const grouped = rows.reduce((acc, row) => {
+        const key = normalizeChannel(row.channel);
+        acc[key] ||= { platform: toLabel(key), sessions: 0 };
+        acc[key].sessions += Number(row.sessions || 0);
+        return acc;
+    }, {});
+
+    return Object.values(grouped).sort((a, b) => b.sessions - a.sessions);
+};
+
+const getMarketingChannelPerformance = async (filters) => {
+    const [adsRows, salesRows] = await Promise.all([getAdsRows(filters), getSalesRows(filters, true)]);
+    const grouped = {};
+
+    for (const row of adsRows) {
+        const key = normalizeChannel(row.platform);
+        grouped[key] ||= { id: key, channel: toLabel(key), spend: 0, impressions: 0, clicks: 0, revenue: 0, analytics_revenue: 0 };
+        grouped[key].spend += Number(row.spend || 0);
+        grouped[key].impressions += Number(row.impressions || 0);
+        grouped[key].clicks += Number(row.clicks || 0);
+        grouped[key].revenue += Number(row.conversion_value || 0);
+    }
+
+    for (const row of salesRows) {
+        const key = normalizeChannel(row.channel);
+        grouped[key] ||= { id: key, channel: toLabel(key), spend: 0, impressions: 0, clicks: 0, revenue: 0, analytics_revenue: 0 };
+        grouped[key].analytics_revenue += Number(row.order_revenue || 0);
+    }
+
+    return Object.values(grouped)
+        .map((row) => ({
+            ...row,
+            spend: round(row.spend),
+            revenue: round(row.revenue),
+            analytics_revenue: round(row.analytics_revenue),
+            ctr: round(row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0),
+            roas: round(row.spend > 0 ? row.analytics_revenue / row.spend : 0),
+            platform_roas: round(row.spend > 0 ? row.revenue / row.spend : 0)
+        }))
+        .sort((a, b) => b.analytics_revenue - a.analytics_revenue);
+};
+
+const getSalesCityPerformance = async (filters) => {
+    const rows = await getSalesRows(filters);
+
+    const grouped = rows.reduce((acc, row) => {
+        const city = row.city || 'Bilinmiyor';
+        acc[city] ||= { id: city, city, orders: 0, revenue: 0, refund_amount: 0, total_revenue: 0 };
+
+        if (row.order_status === 'completed') {
+            acc[city].orders += 1;
+            acc[city].revenue += Number(row.order_revenue || 0);
+        }
+
+        if (row.order_status !== 'cancelled') {
+            acc[city].total_revenue += Number(row.order_revenue || 0);
+        }
+
+        if (row.order_status === 'refunded') {
+            acc[city].refund_amount += Number(row.refund_amount || 0);
+        }
+
+        return acc;
+    }, {});
+
+    return Object.values(grouped)
+        .map((row) => ({
+            id: row.id,
+            city: row.city,
+            orders: row.orders,
+            revenue: round(row.revenue),
+            refund_rate: round(row.total_revenue > 0 ? (row.refund_amount / row.total_revenue) * 100 : 0)
+        }))
+        .sort((a, b) => b.revenue - a.revenue);
+};
+
+const getProductPerformanceSummary = async (filters) => {
+    const rows = await getSalesRows(filters, true);
+
+    const grouped = rows.reduce((acc, row) => {
+        const key = row.product_name || row.product_category || 'Tanimsiz urun';
+        acc[key] ||= {
+            id: key,
+            product_name: row.product_name || 'Tanimsiz urun',
+            product_category: row.product_category || 'Kategorisiz',
+            revenue: 0,
+            orders: 0,
+            items_sold: 0
+        };
+        acc[key].revenue += Number(row.order_revenue || 0);
+        acc[key].orders += 1;
+        acc[key].items_sold += Number(row.product_count || 0);
+        return acc;
+    }, {});
+
+    return Object.values(grouped)
+        .map((row) => ({
+            ...row,
+            revenue: round(row.revenue),
+            aov: round(row.orders > 0 ? row.revenue / row.orders : 0)
+        }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 8);
+};
+
+const getAttributionOverview = async (filters) => {
+    const [trafficRows, adsRows, salesRows] = await Promise.all([
+        getTrafficRows(filters),
+        getAdsRows(filters),
+        getSalesRows(filters)
+    ]);
+
+    return buildAttributionRows(trafficRows, adsRows, salesRows, filters);
 };
 
 module.exports = {
     getTrafficKPIs,
     getAdsKPIs,
     getSalesKPIs,
-    getTrendData
+    getTrendData,
+    getChannelPerformance,
+    getPlatformDistribution,
+    getMarketingChannelPerformance,
+    getSalesCityPerformance,
+    getProductPerformanceSummary,
+    getAttributionOverview
 };

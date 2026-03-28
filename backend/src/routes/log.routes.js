@@ -1,15 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { getLogs } = require('../controllers/log.controller');
+const { getLogs, getImportLogs, getApiLogs, getAuditLogs } = require('../controllers/log.controller');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
-/**
- * @swagger
- * tags:
- *   name: Logs
- *   description: Sistem Güvenlik ve İşlem Kayıtları
- */
-
 router.get('/', authenticate, requireAdmin, getLogs);
+router.get('/imports', authenticate, requireAdmin, getImportLogs);
+router.get('/api', authenticate, requireAdmin, getApiLogs);
+router.get('/audit', authenticate, requireAdmin, getAuditLogs);
 
 module.exports = router;

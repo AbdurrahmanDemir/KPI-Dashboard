@@ -502,7 +502,7 @@ CREATE TABLE users (
     name          VARCHAR(100)         NOT NULL,
     email         VARCHAR(150)         NOT NULL UNIQUE,
     password_hash VARCHAR(255)         NOT NULL,
-    role          ENUM('admin','viewer') NOT NULL DEFAULT 'viewer',
+    role          ENUM('admin','marketing_manager','viewer') NOT NULL DEFAULT 'viewer',
     created_at    DATETIME             NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME             ON UPDATE CURRENT_TIMESTAMP,
     last_login    DATETIME,
@@ -834,8 +834,8 @@ channel_mapping ──────── traffic_data       (source + medium)
 | Metot | Endpoint | Açıklama |
 |-------|----------|----------|
 | POST | `/auth/login` | Kullanıcı girişi, JWT token döner |
-| POST | `/auth/refresh` | Access token yeniler |
-| POST | `/auth/logout` | Token geçersiz kılar |
+| POST | `/auth/refresh` | Access token yeniler ve refresh token rotasyonu yapar |
+| POST | `/auth/logout` | Gönderilen refresh token'ı geçersiz kılar |
 
 ### 5.2 Import Endpoint'leri
 
@@ -864,9 +864,9 @@ channel_mapping ──────── traffic_data       (source + medium)
 
 | Metot | Endpoint | Açıklama |
 |-------|----------|----------|
-| POST | `/normalize/run` | Verileri standart formata dönüştürür |
-| POST | `/kpi/run` | KPI hesaplama süreçlerini çalıştırır, cache'i günceller |
 | GET | `/kpi/summary` | KPI özet metriklerini döndürür |
+| GET | `/kpi/trend` | KPI trend verisini döndürür |
+| POST | `/kpi/run` | KPI cache'ini temizler ve yeniden hesaplamayı tetikler |
 
 ### 5.5 Dashboard Endpoint'leri
 
@@ -876,6 +876,8 @@ channel_mapping ──────── traffic_data       (source + medium)
 | GET | `/dashboard/channel-performance` | Kanal bazlı performansı getirir |
 | GET | `/dashboard/platform-performance` | Platform bazlı performansı getirir |
 | GET | `/dashboard/campaign-performance` | Kampanya bazlı performansı getirir |
+| GET | `/dashboard/product-performance` | Ürün bazlı ciro, sipariş ve adet performansını getirir |
+| GET | `/dashboard/attribution-analysis` | Ads platform ve analytics attribution farklarını getirir |
 | GET | `/dashboard/funnel` | Funnel analiz verisini getirir |
 | GET | `/dashboard/cohort` | Cohort analiz verisini getirir |
 
@@ -886,6 +888,7 @@ channel_mapping ──────── traffic_data       (source + medium)
 | GET | `/filters/options` | Mevcut veriye göre filtre seçeneklerini getirir (kanal listesi, kampanya listesi vb.) |
 | POST | `/filters/validate` | Filtre kombinasyonunu doğrular |
 | GET | `/views` | Kaydedilmiş dashboard görünümlerini listeler |
+| GET | `/views/{id}` | Tekil dashboard görünümünü getirir |
 | POST | `/views` | Yeni dashboard görünümü kaydeder |
 | PUT | `/views/{id}` | Dashboard görünümünü günceller |
 | DELETE | `/views/{id}` | Dashboard görünümünü siler |
@@ -908,6 +911,8 @@ channel_mapping ──────── traffic_data       (source + medium)
 
 | Metot | Endpoint | Açıklama |
 |-------|----------|----------|
+| GET | `/export/pdf` | Özet dashboard raporunu PDF olarak indirir |
+| GET | `/export/csv` | Özet dashboard raporunu CSV olarak indirir |
 | GET | `/export/kpi-summary` | KPI verilerini dışa aktarır |
 | GET | `/export/channel-performance` | Kanal performansını dışa aktarır |
 | GET | `/export/campaign-performance` | Kampanya performansını dışa aktarır |
@@ -915,12 +920,24 @@ channel_mapping ──────── traffic_data       (source + medium)
 
 **Export format parametresi:** `?format=json` (varsayılan) veya `?format=csv` veya `?format=xlsx`
 
-### 5.9 Log Endpoint'leri
+### 5.9 Otomatik Rapor Planı Endpoint'leri
+
+| Metot | Endpoint | Açıklama |
+|-------|----------|----------|
+| GET | `/report-schedules` | Kullanıcının kayıtlı rapor planlarını listeler |
+| POST | `/report-schedules` | Yeni otomatik rapor planı oluşturur |
+| PUT | `/report-schedules/{id}` | Rapor planını günceller veya aktif/pasif yapar |
+| DELETE | `/report-schedules/{id}` | Rapor planını siler |
+| POST | `/report-schedules/{id}/test` | Planı test gönderimi ile çalıştırır |
+
+> Aktif rapor planları backend scheduler servisi tarafından periyodik olarak taranır. Bu sürümde teslimat akışı mock olarak simüle edilir; `last_sent_at`, `last_run_at`, `last_error` ve `next_run_at` alanları plan durumunu izlemek için tutulur.
+
+### 5.10 Log Endpoint'leri
 
 | Metot | Endpoint | Açıklama |
 |-------|----------|----------|
 | GET | `/logs/imports` | Import loglarını getirir |
-| GET | `/logs/api` | API loglarını getirir |
+| GET | `/logs/api` | HTTP method, path, status code ve duration bilgileriyle API request loglarını getirir |
 | GET | `/logs/audit` | Audit loglarını getirir |
 
 ---
@@ -939,7 +956,7 @@ channel_mapping ──────── traffic_data       (source + medium)
 | **Segment Yönetimi** | Kurallı segment oluşturma, segment önizleme, segment bazlı performans analizi |
 | **Filtre Yönetimi** | Global filtre ayarları, kayıtlı filtre kombinasyonları, hızlı filtreleme seçenekleri |
 | **Kaydedilmiş Görünümler** | Kullanıcıların oluşturduğu dashboard layout ve filtre kombinasyonlarının yönetimi |
-| **Export ve Raporlama** | KPI, kanal ve kampanya verilerinin CSV/XLSX/JSON olarak dışa aktarımı |
+| **Export ve Raporlama** | KPI, kanal ve kampanya verilerinin CSV/XLSX/JSON olarak dışa aktarımı, PDF özet raporu, veritabanı filtrelemeli ham veri export'u ve backend'de saklanan otomatik e-posta planları |
 | **Log ve Sistem İzleme** | Import logları, hata logları, audit logları ve sistem işlem geçmişinin görüntülenmesi |
 | **Ayarlar** | Dashboard ayarları, kullanıcı tercihleri, kanal eşleme yönetimi, layout sıfırlama seçenekleri |
 
@@ -950,8 +967,9 @@ channel_mapping ──────── traffic_data       (source + medium)
 ### 7.1 Kimlik Doğrulama ve Yetkilendirme
 
 - JWT tabanlı kimlik doğrulama (Access + Refresh token)
-- Rol bazlı erişim kontrolü: `admin` tüm işlemleri yapabilir, `viewer` yalnızca okuma yapabilir
+- Rol bazlı erişim kontrolü: `admin` tüm işlemleri yapabilir, `marketing_manager` import/export/analiz akışlarını yönetebilir, `viewer` yalnızca okuma yapabilir
 - Token süresi: Access token 24 saat, Refresh token 7 gün
+- Refresh token'lar veritabanında hashlenmiş olarak tutulur; yenileme sırasında rotate edilir, logout sırasında geri alınır
 
 ### 7.2 API Güvenliği
 

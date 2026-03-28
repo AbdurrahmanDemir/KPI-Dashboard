@@ -21,7 +21,19 @@ const TrafficData = sequelize.define(
             type: DataTypes.STRING(100),
             allowNull: true,
         },
+        campaign_name: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
         channel_group: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
+        device: {
+            type: DataTypes.STRING(50),
+            allowNull: true,
+        },
+        city: {
             type: DataTypes.STRING(100),
             allowNull: true,
         },
@@ -74,6 +86,10 @@ const TrafficData = sequelize.define(
             allowNull: false,
             defaultValue: 0.0,
         },
+        raw_payload: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
         import_id: {
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: true,
@@ -88,6 +104,9 @@ const TrafficData = sequelize.define(
             { fields: ['date'] },
             { fields: ['channel'] },
             { fields: ['source', 'medium'] },
+            { fields: ['campaign_name'] },
+            { fields: ['device'] },
+            { fields: ['city'] },
             { fields: ['date', 'channel'] },
         ],
     }

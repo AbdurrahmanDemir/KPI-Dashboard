@@ -87,6 +87,10 @@ const AdsData = sequelize.define(
             allowNull: false,
             defaultValue: 'TRY',
         },
+        raw_payload: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
         import_id: {
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: true,

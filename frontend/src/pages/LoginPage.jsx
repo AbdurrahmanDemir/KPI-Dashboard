@@ -33,6 +33,9 @@ export default function LoginPage() {
         if (role === 'admin') {
             setEmail('admin@kpidashboard.com');
             setPassword('admin123');
+        } else if (role === 'marketing') {
+            setEmail('marketing@kpidashboard.com');
+            setPassword('marketing123');
         } else {
             setEmail('viewer@kpidashboard.com');
             setPassword('viewer123');
@@ -150,6 +153,14 @@ export default function LoginPage() {
                         >
                             <span style={styles.demoBadge('admin')}>Admin</span>
                             admin@kpidashboard.com
+                        </button>
+                        <button
+                            id="demo-marketing-btn"
+                            onClick={() => fillDemo('marketing')}
+                            style={styles.demoBtn}
+                        >
+                            <span style={styles.demoBadge('marketing')}>Marketing</span>
+                            marketing@kpidashboard.com
                         </button>
                         <button
                             id="demo-viewer-btn"
@@ -368,9 +379,9 @@ const styles = {
         letterSpacing: '0.04em',
         padding: '2px 7px',
         borderRadius: 4,
-        background: role === 'admin' ? 'rgba(99,102,241,0.2)' : 'rgba(16,185,129,0.15)',
-        color: role === 'admin' ? '#818cf8' : '#34d399',
-        border: `1px solid ${role === 'admin' ? 'rgba(99,102,241,0.3)' : 'rgba(16,185,129,0.25)'}`,
+        background: role === 'admin' ? 'rgba(99,102,241,0.2)' : role === 'marketing' ? 'rgba(245,158,11,0.16)' : 'rgba(16,185,129,0.15)',
+        color: role === 'admin' ? '#818cf8' : role === 'marketing' ? '#fbbf24' : '#34d399',
+        border: `1px solid ${role === 'admin' ? 'rgba(99,102,241,0.3)' : role === 'marketing' ? 'rgba(245,158,11,0.28)' : 'rgba(16,185,129,0.25)'}`,
     }),
     footer: {
         textAlign: 'center',

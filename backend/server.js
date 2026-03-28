@@ -12,6 +12,8 @@ const swaggerSpec = require('./src/config/swagger');
 // Modelleri yükle (ilişkiler dahil)
 require('./src/models/index');
 const { errorHandler, notFound } = require('./src/middleware/errorHandler');
+const apiLogger = require('./src/middleware/apiLogger');
+const { startReportScheduler } = require('./src/services/reportScheduler.service');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -53,6 +55,8 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
 
+app.use(apiLogger);
+
 // ─── Swagger UI ───────────────────────────────────────────────────────────────
 app.use(
     '/api-docs',
@@ -69,12 +73,14 @@ app.use('/api/auth', require('./src/routes/auth.routes'));
 // Hafta 4-7'de aktif edilecek:
 app.use('/api/imports', require('./src/routes/import.routes'));
 app.use('/api/kpi', require('./src/routes/kpi.routes'));
-// app.use('/api/dashboard', require('./src/routes/dashboard.routes'));
-// app.use('/api/filters', require('./src/routes/filter.routes'));
+app.use('/api/dashboard', require('./src/routes/dashboard.routes'));
+app.use('/api/filters', require('./src/routes/filter.routes'));
+app.use('/api/mappings', require('./src/routes/mapping.routes'));
 app.use('/api/views', require('./src/routes/view.routes'));
 app.use('/api/segments', require('./src/routes/segment.routes'));
 app.use('/api/users', require('./src/routes/user.routes'));
 app.use('/api/export', require('./src/routes/export.routes'));
+app.use('/api/report-schedules', require('./src/routes/reportSchedule.routes'));
 app.use('/api/logs', require('./src/routes/log.routes'));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
@@ -109,6 +115,7 @@ app.use(errorHandler);
 // ─── Server Başlatma ─────────────────────────────────────────────────────────
 const startServer = async () => {
     await connectDB();
+    startReportScheduler();
     app.listen(PORT, () => {
         console.log(`\n🚀 KPI Dashboard API çalışıyor`);
         console.log(`   ├── Server:  http://localhost:${PORT}`);

@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /* ─── CSS Custom Properties (Design Tokens) ─────────────────────────────────── */
-:root, .light {
+:root,
+.light {
   /* Renkler (Spike Admin Light Teması) */
   --color-bg-primary: #f0f5f9;
   --color-bg-secondary: #ffffff;

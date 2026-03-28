@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getViews, createView, deleteView } = require('../controllers/view.controller');
+const { getViews, getViewById, createView, updateView, deleteView } = require('../controllers/view.controller');
 const { authenticate } = require('../middleware/auth');
 
 /**
@@ -23,6 +23,7 @@ const { authenticate } = require('../middleware/auth');
  *         description: Görünüm listesi
  */
 router.get('/', authenticate, getViews);
+router.get('/:id', authenticate, getViewById);
 
 /**
  * @swagger
@@ -52,6 +53,7 @@ router.get('/', authenticate, getViews);
  *         description: Oluşturulan görünüm
  */
 router.post('/', authenticate, createView);
+router.put('/:id', authenticate, updateView);
 
 /**
  * @swagger

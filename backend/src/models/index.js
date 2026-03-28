@@ -18,6 +18,8 @@ const KpiCache = require('./KpiCache');
 const SavedView = require('./SavedView');
 const Segment = require('./Segment');
 const AuditLog = require('./AuditLog');
+const RefreshToken = require('./RefreshToken');
+const ReportSchedule = require('./ReportSchedule');
 
 // ─── İlişkiler ────────────────────────────────────────────────────────────────
 
@@ -36,6 +38,14 @@ Segment.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 // User → AuditLog (1:N)
 User.hasMany(AuditLog, { foreignKey: 'user_id', as: 'audit_logs' });
 AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// User → RefreshToken (1:N)
+User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refresh_tokens' });
+RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// User → ReportSchedule (1:N)
+User.hasMany(ReportSchedule, { foreignKey: 'user_id', as: 'report_schedules' });
+ReportSchedule.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // ImportLog → TrafficData (1:N)
 ImportLog.hasMany(TrafficData, { foreignKey: 'import_id', as: 'traffic_data' });
@@ -68,4 +78,6 @@ module.exports = {
     SavedView,
     Segment,
     AuditLog,
+    RefreshToken,
+    ReportSchedule,
 };

@@ -1,20 +1,19 @@
 import { create } from 'zustand';
 
-const today = new Date();
-const lastMonth = new Date();
-lastMonth.setDate(today.getDate() - 30);
-
-const formatDate = (date) => date.toISOString().split('T')[0];
+const defaultFilters = {
+    start_date: '',
+    end_date: '',
+    channel: '',
+    platform: '',
+    campaign_name: '',
+    product_name: '',
+    city: '',
+    device: '',
+    country: ''
+};
 
 const useFilterStore = create((set) => ({
-    filters: {
-        start_date: formatDate(lastMonth),
-        end_date: formatDate(today),
-        channel: '',
-        platform: '',
-        campaign_name: '',
-        city: ''
-    },
+    filters: { ...defaultFilters },
     setFilter: (key, value) => 
         set((state) => ({
             filters: { ...state.filters, [key]: value }
@@ -25,14 +24,7 @@ const useFilterStore = create((set) => ({
         })),
     resetFilters: () => 
         set({
-            filters: {
-                start_date: formatDate(lastMonth),
-                end_date: formatDate(today),
-                channel: '',
-                platform: '',
-                campaign_name: '',
-                city: ''
-            }
+            filters: { ...defaultFilters }
         })
 }));
 

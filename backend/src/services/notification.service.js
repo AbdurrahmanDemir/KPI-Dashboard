@@ -1,57 +1,48 @@
 /**
  * Notification Service
- * Amaç: Haftalık KPI raporlarını E-Posta veya Slack üzerinden belirlenen kişilere otomatik göndermek.
- * E-Posta için Nodemailer entegrasyonu veya AWS SES kullanılabilir.
+ * Mock e-posta ve Slack bildirim servisi.
+ * SMTP bilgileri tanimli olsa bile bu surumde teslimat simule edilir.
  */
 
-// Örn: const nodemailer = require('nodemailer');
+const getDeliveryMode = () => {
+    const hasSmtpConfig = Boolean(
+        process.env.SMTP_HOST &&
+        process.env.SMTP_PORT &&
+        process.env.SMTP_USER &&
+        process.env.SMTP_PASS &&
+        process.env.SMTP_FROM
+    );
+
+    return hasSmtpConfig ? 'smtp_configured_mock' : 'mock';
+};
 
 const sendEmailReport = async (to, subject, htmlContent, attachments = []) => {
     try {
-        console.log(`[MAIL GÖNDERİLİYOR] Alıcı: ${to} | Konu: ${subject}`);
-        /*
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: process.env.SMTP_PORT,
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS
-            }
-        });
-        await transporter.sendMail({
-            from: process.env.SMTP_FROM,
-            to,
-            subject,
-            html: htmlContent,
-            attachments
-        });
-        */
-        console.log('[MAIL] Başarıyla gönderildi (Mock)');
+        console.log(`[MAIL GONDERILIYOR] Alici: ${to} | Konu: ${subject} | Mod: ${getDeliveryMode()}`);
+        void htmlContent;
+        void attachments;
+        console.log('[MAIL] Basariyla gonderildi (Mock)');
         return true;
     } catch (err) {
-        console.error('[MAIL Hatası]', err);
+        console.error('[MAIL Hatasi]', err);
         return false;
     }
 };
 
 const sendSlackNotification = async (webhookUrl, messageBlocks) => {
     try {
-        console.log(`[SLACK GÖNDERİLİYOR] ${webhookUrl}`);
-        /*
-        await axios.post(webhookUrl, {
-            text: "Yeni KPI Raporu",
-            blocks: messageBlocks
-        });
-        */
-        console.log('[SLACK] Başarıyla gönderildi (Mock)');
+        console.log(`[SLACK GONDERILIYOR] ${webhookUrl}`);
+        void messageBlocks;
+        console.log('[SLACK] Basariyla gonderildi (Mock)');
         return true;
     } catch (err) {
-        console.error('[SLACK Hatası]', err);
+        console.error('[SLACK Hatasi]', err);
         return false;
     }
 };
 
 module.exports = {
     sendEmailReport,
-    sendSlackNotification
+    sendSlackNotification,
+    getDeliveryMode,
 };
