@@ -3,6 +3,7 @@ const router = express.Router();
 const {
     exportSummaryPDF,
     exportSummaryCSV,
+    exportSummaryXLSX,
     exportKpiSummary,
     exportChannelPerformance,
     exportCampaignPerformance,
@@ -12,6 +13,7 @@ const { authenticate } = require('../middleware/auth');
 
 router.get('/pdf', authenticate, exportSummaryPDF);
 router.get('/csv', authenticate, exportSummaryCSV);
+router.get('/xlsx', authenticate, exportSummaryXLSX);
 router.get('/kpi-summary', authenticate, exportKpiSummary);
 router.get('/channel-performance', authenticate, exportChannelPerformance);
 router.get('/campaign-performance', authenticate, exportCampaignPerformance);

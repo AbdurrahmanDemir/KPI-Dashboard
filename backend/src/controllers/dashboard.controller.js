@@ -21,7 +21,11 @@ const extractFilters = (req) => ({
     product_name: req.query.product_name,
     city: req.query.city,
     device: req.query.device,
-    country: req.query.country
+    country: req.query.country,
+    min_revenue: req.query.min_revenue,
+    max_revenue: req.query.max_revenue,
+    min_roas: req.query.min_roas,
+    min_orders: req.query.min_orders
 });
 
 const handler = (fn, message) => async (req, res) => {

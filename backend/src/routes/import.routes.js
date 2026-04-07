@@ -12,7 +12,8 @@ const {
     validateImport,
     getErrors,
     commitImport,
-    deleteImport
+    deleteImport,
+    purgeOrphanData
 } = require('../controllers/import.controller');
 const { authenticate, requireRoles } = require('../middleware/auth');
 
@@ -52,6 +53,7 @@ const upload = multer({
 
 router.get('/', authenticate, requireRoles('admin', 'marketing_manager'), listImports);
 router.post('/', authenticate, requireRoles('admin', 'marketing_manager'), upload.single('file'), uploadFile);
+router.delete('/purge', authenticate, requireRoles('admin'), purgeOrphanData);
 router.get('/:id', authenticate, requireRoles('admin', 'marketing_manager'), getImportById);
 router.get('/:id/preview', authenticate, requireRoles('admin', 'marketing_manager'), getPreview);
 router.post('/:id/map-columns', authenticate, requireRoles('admin', 'marketing_manager'), mapColumns);

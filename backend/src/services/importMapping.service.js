@@ -163,7 +163,7 @@ const FIELD_ALIASES = {
 
 const REQUIRED_FIELDS = {
     sales: ['order_id', 'order_date', 'customer_id', 'channel', 'order_revenue'],
-    google_analytics: ['date', 'channel', 'sessions', 'users'],
+    google_analytics: ['date', 'channel_group', 'sessions', 'users'],
     meta_ads: ['date', 'campaign_name', 'impressions', 'clicks', 'spend'],
     google_ads: ['date', 'campaign_name', 'impressions', 'clicks', 'spend'],
     funnel: ['date', 'channel', 'step_name', 'step_order', 'session_count']

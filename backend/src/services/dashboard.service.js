@@ -20,6 +20,21 @@ const buildDateWhere = (filters, field = 'date') => {
     return where;
 };
 
+const applyAdvancedFilters = (rows, filters) => {
+    return rows.filter(row => {
+        const roas = row.analytics_roas ?? row.roas ?? row.platform_roas ?? 0;
+        const revenue = row.analytics_revenue ?? row.revenue ?? row.total_revenue ?? 0;
+        const orders = row.analytics_orders ?? row.orders ?? 0;
+
+        if (filters.min_roas && roas < Number(filters.min_roas)) return false;
+        if (filters.min_revenue && revenue < Number(filters.min_revenue)) return false;
+        if (filters.max_revenue && revenue > Number(filters.max_revenue)) return false;
+        if (filters.min_orders && orders < Number(filters.min_orders)) return false;
+
+        return true;
+    });
+};
+
 const normalizeChannel = (value) => {
     const raw = String(value || '').trim().toLowerCase();
     if (!raw) return 'other';
@@ -73,7 +88,7 @@ const getChannelPerformance = async (filters) => {
         return acc;
     }, {});
 
-    return Object.values(grouped).map((row) => ({ ...row, revenue: round(row.revenue) })).sort((a, b) => b.revenue - a.revenue);
+    return applyAdvancedFilters(Object.values(grouped).map((row) => ({ ...row, revenue: round(row.revenue) })), filters).sort((a, b) => b.revenue - a.revenue);
 };
 
 const getPlatformPerformance = async (filters) => {
@@ -96,13 +111,13 @@ const getPlatformPerformance = async (filters) => {
         return acc;
     }, {});
 
-    return Object.values(grouped).map((row) => ({
+    return applyAdvancedFilters(Object.values(grouped).map((row) => ({
         ...row,
         spend: round(row.spend),
         revenue: round(row.revenue),
         ctr: round(row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0),
         roas: round(row.spend > 0 ? row.revenue / row.spend : 0)
-    })).sort((a, b) => b.revenue - a.revenue);
+    })), filters).sort((a, b) => b.revenue - a.revenue);
 };
 
 const getCampaignPerformance = async (filters) => {
@@ -199,7 +214,7 @@ const getCampaignPerformance = async (filters) => {
         grouped[key].sessions += Number(row.sessions || 0);
     }
 
-    return Object.values(grouped).map((row) => {
+    return applyAdvancedFilters(Object.values(grouped).map((row) => {
         const ctr = row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0;
         const analyticsCvr = row.sessions > 0 ? (row.analytics_conversions / row.sessions) * 100 : 0;
         const platformRoas = row.spend > 0 ? row.platform_revenue / row.spend : 0;
@@ -215,7 +230,7 @@ const getCampaignPerformance = async (filters) => {
             platform_roas: round(platformRoas),
             analytics_roas: round(analyticsRoas)
         };
-    }).sort((a, b) => b.analytics_revenue - a.analytics_revenue);
+    }), filters).sort((a, b) => b.analytics_revenue - a.analytics_revenue);
 };
 
 const getProductPerformance = async (filters) => {
@@ -249,12 +264,12 @@ const getProductPerformance = async (filters) => {
         return acc;
     }, {});
 
-    return Object.values(grouped)
+    return applyAdvancedFilters(Object.values(grouped)
         .map((row) => ({
             ...row,
             revenue: round(row.revenue),
             aov: round(row.orders > 0 ? row.revenue / row.orders : 0)
-        }))
+        })), filters)
         .sort((a, b) => b.revenue - a.revenue);
 };
 
@@ -316,7 +331,7 @@ const getAttributionAnalysis = async (filters) => {
         grouped[key].orders += 1;
     }
 
-    const rows = Object.values(grouped).map((row) => {
+    const rawRows = Object.values(grouped).map((row) => {
         const ctr = row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0;
         const cvr = row.sessions > 0 ? (row.orders / row.sessions) * 100 : 0;
         const analyticsRoas = row.spend > 0 ? row.analytics_revenue / row.spend : 0;
@@ -339,7 +354,9 @@ const getAttributionAnalysis = async (filters) => {
             attribution_gap: round(row.platform_revenue - row.analytics_revenue),
             diagnosis
         };
-    }).sort((a, b) => b.analytics_revenue - a.analytics_revenue);
+    });
+
+    const rows = applyAdvancedFilters(rawRows, filters).sort((a, b) => b.analytics_revenue - a.analytics_revenue);
 
     return {
         summary: {

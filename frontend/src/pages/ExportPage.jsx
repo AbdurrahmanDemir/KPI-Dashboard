@@ -96,7 +96,7 @@ export default function ExportPage() {
             });
 
             const blob = new Blob([res.data], {
-                type: format === 'pdf' ? 'application/pdf' : 'text/csv',
+                type: format === 'pdf' ? 'application/pdf' : format === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv',
             });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -223,6 +223,13 @@ export default function ExportPage() {
                             style={{ ...primaryButtonStyle, background: '#ef4444' }}
                         >
                             {downloadingFormat === 'pdf' ? 'Hazırlanıyor...' : 'PDF Olarak İndir'}
+                        </button>
+                        <button
+                            onClick={() => handleDownload('xlsx')}
+                            disabled={downloadingFormat !== null}
+                            style={{ ...primaryButtonStyle, background: '#3b82f6' }}
+                        >
+                            {downloadingFormat === 'xlsx' ? 'Hazırlanıyor...' : 'Excel (XLSX) Olarak İndir'}
                         </button>
                         <button
                             onClick={() => handleDownload('csv')}

@@ -160,6 +160,32 @@ const exportSummaryCSV = async (req, res) => {
     }
 };
 
+const exportSummaryXLSX = async (req, res) => {
+    try {
+        const filters = buildFilters(req);
+        const [traffic, ads, sales] = await Promise.all([
+            getTrafficKPIs(filters),
+            getAdsKPIs(filters),
+            getSalesKPIs(filters)
+        ]);
+
+        const rows = [
+            { metrik: 'Toplam Ciro', deger: sales.revenue },
+            { metrik: 'Siparis Sayisi', deger: sales.orders },
+            { metrik: 'Sepet Ortalamasi', deger: sales.aov },
+            { metrik: 'Iade Orani', deger: sales.refund_rate },
+            { metrik: 'Toplam Harcama', deger: ads.spend },
+            { metrik: 'Genel ROAS', deger: ads.roas },
+            { metrik: 'Toplam Ziyaretci', deger: traffic.sessions }
+        ];
+
+        return sendTabularExport(res, `KPI_Raporu_${new Date().toISOString().split('T')[0]}`, 'xlsx', rows);
+    } catch (err) {
+        console.error('[EXPORT] XLSX Error:', err);
+        return errorResponse(res, 500, 'INTERNAL_ERROR', 'Excel raporu olusturulamadi.');
+    }
+};
+
 const exportKpiSummary = async (req, res) => {
     try {
         const format = req.query.format || 'json';
@@ -247,6 +273,7 @@ const exportRawData = async (req, res) => {
 module.exports = {
     exportSummaryPDF,
     exportSummaryCSV,
+    exportSummaryXLSX,
     exportKpiSummary,
     exportChannelPerformance,
     exportCampaignPerformance,

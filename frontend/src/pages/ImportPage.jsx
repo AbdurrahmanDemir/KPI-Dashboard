@@ -166,6 +166,20 @@ const ImportHistory = ({ onRefresh }) => {
         }
     };
 
+    const handlePurgeOrphans = async () => {
+        try {
+            if (!window.confirm('Veritabanında kalmış (herhangi bir import geçmişine ait olmayan) tüm test, demo ve bozuk veriler silinecek. Emin misiniz?')) return;
+            setLoading(true);
+            const res = await api.delete('/imports/purge');
+            showToast(res.data.data.message || 'Kalıntı veriler başarıyla temizlendi.');
+            fetchImports(page);
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            showToast(err.response?.data?.error?.message || 'Kalıntılar temizlenemedi.', 'error');
+            setLoading(false);
+        }
+    };
+
     if (loading) return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', gap: '16px' }}>
             <div style={{ width: '36px', height: '36px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -236,6 +250,24 @@ const ImportHistory = ({ onRefresh }) => {
                             ))}
                         </div>
                     )}
+
+                    {/* Purge / Toolbar */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                        <button
+                            onClick={handlePurgeOrphans}
+                            title="Import geçmişine bağlı olmayan, eski sürümden kalma test/bozuk verileri çöpe atar."
+                            style={{
+                                padding: '8px 16px', borderRadius: '8px', border: '1px solid #f59e0b',
+                                background: 'rgba(245,158,11,0.1)', color: '#d97706', fontSize: '13px', fontWeight: 600,
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.2)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.1)'; }}
+                        >
+                            🧹 Geçmiş Kalıntıları Temizle
+                        </button>
+                    </div>
 
                     {/* Table */}
                     <div style={{ borderRadius: '12px', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
@@ -356,6 +388,7 @@ export default function ImportPage() {
     const [validationMessage, setValidationMessage] = useState('');
     const [validationSummary, setValidationSummary] = useState(null);
     const [isValidating, setIsValidating] = useState(false);
+    const [isCommitting, setIsCommitting] = useState(false);
 
     const sourceTypes = [
         { value: 'sales', label: 'Satış Verisi' },
@@ -447,12 +480,15 @@ export default function ImportPage() {
 
     const handleCommit = async () => {
         try {
+            setIsCommitting(true);
             await api.post(`/imports/${importId}/commit`);
             setStep(4);
             setMessage('Import başarıyla tamamlandı.');
             setHistoryKey(k => k + 1); // refresh history
         } catch (err) {
             setError(err.response?.data?.error?.message || 'Veri kaydedilirken hata oluştu.');
+        } finally {
+            setIsCommitting(false);
         }
     };
 
@@ -683,16 +719,22 @@ export default function ImportPage() {
 
                                     <button
                                         onClick={handleCommit}
-                                        disabled={!validationSummary?.valid}
+                                        disabled={!validationSummary?.valid || isCommitting}
                                         style={{
                                             padding: '11px 28px', borderRadius: '8px', border: 'none',
-                                            background: validationSummary?.valid ? 'linear-gradient(135deg, #10b981, #059669)' : '#374151',
-                                            color: 'white', cursor: validationSummary?.valid ? 'pointer' : 'not-allowed',
-                                            fontWeight: 700, fontSize: '14px', opacity: validationSummary?.valid ? 1 : 0.6,
-                                            boxShadow: validationSummary?.valid ? '0 4px 12px rgba(16,185,129,0.3)' : 'none',
+                                            background: (validationSummary?.valid && !isCommitting) ? 'linear-gradient(135deg, #10b981, #059669)' : '#374151',
+                                            color: 'white', cursor: (validationSummary?.valid && !isCommitting) ? 'pointer' : 'not-allowed',
+                                            fontWeight: 700, fontSize: '14px', opacity: (validationSummary?.valid && !isCommitting) ? 1 : 0.6,
+                                            boxShadow: (validationSummary?.valid && !isCommitting) ? '0 4px 12px rgba(16,185,129,0.3)' : 'none',
+                                            display: 'flex', alignItems: 'center', gap: '8px'
                                         }}
                                     >
-                                        ✓ Veriyi Kaydet (Commit)
+                                        {isCommitting ? (
+                                            <>
+                                                <span style={{ display: 'inline-block', width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                                                Veritabanına Yazılıyor...
+                                            </>
+                                        ) : '✓ Veriyi Kaydet (Commit)'}
                                     </button>
                                 </div>
                             )}

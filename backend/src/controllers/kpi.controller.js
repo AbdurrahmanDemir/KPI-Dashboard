@@ -29,6 +29,10 @@ const getSummary = async (req, res) => {
             city: req.query.city,
             device: req.query.device,
             country: req.query.country,
+            min_revenue: req.query.min_revenue,
+            max_revenue: req.query.max_revenue,
+            min_roas: req.query.min_roas,
+            min_orders: req.query.min_orders,
         };
 
         // 1. Filtreleri standartlaştır ve Hash üret
@@ -126,6 +130,10 @@ const getTrend = async (req, res) => {
             city: req.query.city,
             device: req.query.device,
             country: req.query.country,
+            min_revenue: req.query.min_revenue,
+            max_revenue: req.query.max_revenue,
+            min_roas: req.query.min_roas,
+            min_orders: req.query.min_orders,
         };
 
         // Cache kontrolü

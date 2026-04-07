@@ -676,6 +676,27 @@ const deleteImport = async (req, res) => {
     }
 };
 
+const purgeOrphanData = async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return errorResponse(res, 403, 'FORBIDDEN', 'Zombi verileri temizleme yetkisi sadece adminlere aittir.');
+        }
+
+        let totalDeleted = 0;
+        for (const Model of IMPORT_MODELS) {
+            const deletedCount = await Model.destroy({ where: { import_id: null } });
+            totalDeleted += deletedCount;
+        }
+
+        await KpiCache.destroy({ where: {} });
+        await writeAudit(req, 'purge_orphan_data', 'all', { deleted_rows: totalDeleted });
+
+        return successResponse(res, { message: `${totalDeleted} adet sahipsiz kayit veritabanindan temizlendi.` });
+    } catch (err) {
+        return errorResponse(res, 500, 'INTERNAL_ERROR', 'Sahipsiz veriler temizlenirken hata olustu.');
+    }
+};
+
 module.exports = {
     listImports,
     getImportById,
@@ -685,5 +706,6 @@ module.exports = {
     validateImport,
     getErrors,
     commitImport,
-    deleteImport
+    deleteImport,
+    purgeOrphanData
 };
