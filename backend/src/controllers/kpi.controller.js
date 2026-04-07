@@ -128,7 +128,29 @@ const getTrend = async (req, res) => {
             country: req.query.country,
         };
 
+        // Cache kontrolü
+        const filterStr = JSON.stringify({ version: KPI_CACHE_SCHEMA_VERSION, filters });
+        const filtersHash = crypto.createHash('md5').update(filterStr).digest('hex');
+        const kpiType = 'trend';
+        const dateStart = filters.start_date || '2000-01-01';
+        const dateEnd = filters.end_date || '2099-12-31';
+
+        const cached = await KpiCache.findOne({
+            where: { kpi_type: kpiType, date_start: dateStart, date_end: dateEnd, filters_hash: filtersHash, expires_at: { [Op.gt]: new Date() } }
+        });
+
+        if (cached) return successResponse(res, cached.value);
+
         const trend = await getTrendData(filters);
+
+        const ttlMinutes = parseInt(process.env.KPI_CACHE_TTL_MINUTES || 15);
+        const expiresAt = new Date(Date.now() + ttlMinutes * 60000);
+        const existing = await KpiCache.findOne({ where: { kpi_type: kpiType, date_start: dateStart, date_end: dateEnd, filters_hash: filtersHash } });
+        if (existing) {
+            await existing.update({ value: trend, expires_at: expiresAt, calculated_at: new Date() });
+        } else {
+            await KpiCache.create({ kpi_type: kpiType, date_start: dateStart, date_end: dateEnd, filters_hash: filtersHash, value: trend, expires_at: expiresAt });
+        }
 
         return successResponse(res, trend);
     } catch (err) {

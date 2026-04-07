@@ -16,7 +16,8 @@ import {
     IconShieldLock,
     IconSettings,
     IconMenu2,
-    IconLogout
+    IconLogout,
+    IconFilter
 } from '@tabler/icons-react';
 
 export default function MainLayout({ children }) {
@@ -25,18 +26,19 @@ export default function MainLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const navItems = [
-        { path: '/', label: 'Genel Bakis', icon: IconLayoutDashboard },
+        { path: '/', label: 'Genel Bakış', icon: IconLayoutDashboard },
         { path: '/marketing', label: 'Pazarlama Analizi', icon: IconTarget },
-        { path: '/sales', label: 'Satis Analizi', icon: IconTrendingUp },
+        { path: '/sales', label: 'Satış Analizi', icon: IconTrendingUp },
         { path: '/channels', label: 'Kanal Analizi', icon: IconChartBar },
         { path: '/campaigns', label: 'Kampanya Analizi', icon: IconChartHistogram },
         { path: '/traffic', label: 'Trafik Analizi', icon: IconChartDonut3 },
         { path: '/funnel', label: 'Funnel Analizi', icon: IconRoute },
         { path: '/cohort', label: 'Cohort Analizi', icon: IconTable },
-        { path: '/import', label: 'Veri Yukleme', icon: IconUpload, allowedRoles: ['admin', 'marketing_manager'] },
+        { path: '/import', label: 'Veri Yükleme', icon: IconUpload, allowedRoles: ['admin', 'marketing_manager'] },
+        { path: '/segments', label: 'Segment Yönetimi', icon: IconFilter, allowedRoles: ['admin', 'marketing_manager'] },
         { path: '/export', label: 'Raporlama', icon: IconFileExport },
-        { path: '/users', label: 'Takim Yonetimi', icon: IconUsers, adminOnly: true },
-        { path: '/logs', label: 'Denetim Loglari', icon: IconShieldLock, adminOnly: true },
+        { path: '/users', label: 'Takım Yönetimi', icon: IconUsers, adminOnly: true },
+        { path: '/logs', label: 'Denetim Logları', icon: IconShieldLock, adminOnly: true },
         { path: '/settings', label: 'Ayarlar', icon: IconSettings, allowedRoles: ['admin', 'marketing_manager'] },
     ];
 
@@ -98,7 +100,7 @@ export default function MainLayout({ children }) {
                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>{user?.name || 'Kullanici'}</span>
                             <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', textTransform: 'capitalize' }}>
-                                {user?.role === 'admin' ? 'Yonetici' : user?.role === 'marketing_manager' ? 'Pazarlama Yetkilisi' : 'Goruntuleyici'}
+                                {user?.role === 'admin' ? 'Yönetici' : user?.role === 'marketing_manager' ? 'Pazarlama Yetkilisi' : 'Görüntüleyici'}
                             </span>
                         </div>
                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e5f3fb', color: 'var(--color-accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>

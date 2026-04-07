@@ -1,7 +1,7 @@
 import React from 'react';
 import { IconArrowUpLeft, IconArrowDownRight } from '@tabler/icons-react';
 
-export default function KpiCard({ title, value, prefix = '', suffix = '', change, isLoading }) {
+export default function KpiCard({ title, value, prefix = '', suffix = '', change, isLoading, subtitle }) {
     const formattedValue = typeof value === 'number' 
         ? new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(value) 
         : value;
@@ -24,12 +24,8 @@ export default function KpiCard({ title, value, prefix = '', suffix = '', change
     }
 
     return (
-        <div style={{
-            background: 'var(--color-bg-card)',
+        <div className="premium-card" style={{
             padding: '24px',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-card)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between'
@@ -40,9 +36,16 @@ export default function KpiCard({ title, value, prefix = '', suffix = '', change
                 {isLoading ? (
                     <span style={{ color: 'var(--color-text-muted)', fontSize: '18px' }}>Yükleniyor...</span>
                 ) : (
-                    <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                        {prefix}{formattedValue}{suffix}
-                    </span>
+                    <>
+                        <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                            {prefix}{formattedValue}{suffix}
+                        </span>
+                        {subtitle && (
+                            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                {subtitle}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

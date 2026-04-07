@@ -434,27 +434,51 @@ const getCohortPerformance = async (filters) => {
 };
 
 const getFilterOptions = async () => {
-    const [trafficChannels, salesChannels, adsPlatforms, adCampaigns, salesCampaigns, products, cities, devices, countries] = await Promise.all([
+    const [
+        trafficChannels, salesChannels,
+        adsPlatforms, adCampaigns, salesCampaigns, trafficCampaigns,
+        products,
+        salesCities, trafficCities,
+        salesDevices, trafficDevices,
+        countries
+    ] = await Promise.all([
         TrafficData.findAll({ attributes: ['channel'], group: ['channel'], raw: true }),
         SalesData.findAll({ attributes: ['channel'], group: ['channel'], raw: true }),
         AdsData.findAll({ attributes: ['platform'], group: ['platform'], raw: true }),
         AdsData.findAll({ attributes: ['campaign_name'], group: ['campaign_name'], raw: true }),
         SalesData.findAll({ attributes: ['campaign_name'], group: ['campaign_name'], raw: true }),
+        TrafficData.findAll({ attributes: ['campaign_name'], group: ['campaign_name'], raw: true }),
         SalesData.findAll({ attributes: ['product_name'], group: ['product_name'], raw: true }),
         SalesData.findAll({ attributes: ['city'], group: ['city'], raw: true }),
+        TrafficData.findAll({ attributes: ['city'], group: ['city'], raw: true }),
         SalesData.findAll({ attributes: ['device'], group: ['device'], raw: true }),
+        TrafficData.findAll({ attributes: ['device'], group: ['device'], raw: true }),
         SalesData.findAll({ attributes: ['country'], group: ['country'], raw: true })
     ]);
+
+    // Sales + Traffic'ten gelen şehirleri birleştir
+    const cities = [...new Set([
+        ...salesCities.map(r => r.city),
+        ...trafficCities.map(r => r.city)
+    ].filter(Boolean))].sort().map(c => c);
+
+    // Sales + Traffic'ten gelen cihazları birleştir
+    const devices = [...new Set([
+        ...salesDevices.map(r => r.device),
+        ...trafficDevices.map(r => r.device)
+    ].filter(Boolean))].sort().map(d => d);
 
     const channelSet = new Set([...trafficChannels, ...salesChannels].map((row) => normalizeChannel(row.channel)).filter(Boolean));
 
     return {
         channels: Array.from(channelSet).map((channel) => ({ value: channel, label: labelForChannel(channel) })),
         platforms: adsPlatforms.map((row) => ({ value: row.platform, label: labelForChannel(row.platform) })),
-        campaigns: Array.from(new Set([...adCampaigns, ...salesCampaigns].map((row) => row.campaign_name).filter(Boolean))).sort(),
+        campaigns: Array.from(new Set([
+            ...adCampaigns, ...salesCampaigns, ...trafficCampaigns
+        ].map((row) => row.campaign_name).filter(Boolean))).sort(),
         products: products.map((row) => row.product_name).filter(Boolean).sort(),
-        cities: cities.map((row) => row.city).filter(Boolean).sort(),
-        devices: devices.map((row) => row.device).filter(Boolean).sort(),
+        cities,
+        devices,
         countries: countries.map((row) => row.country).filter(Boolean).sort()
     };
 };

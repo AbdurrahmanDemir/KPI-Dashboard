@@ -1,7 +1,1 @@
-[REPORT SCHEDULER] Initial run error: Unknown column 'last_run_at' in 'field list'
-[REPORT SCHEDULER] Poll error: Unknown column 'last_run_at' in 'field list'
-[REPORT SCHEDULER] Poll error: Unknown column 'last_run_at' in 'field list'
-[REPORT SCHEDULER] Poll error: Unknown column 'last_run_at' in 'field list'
-[REPORT SCHEDULER] Poll error: Unknown column 'last_run_at' in 'field list'
-[REPORT SCHEDULER] Poll error: Unknown column 'last_run_at' in 'field list'
-^C
+^C^C

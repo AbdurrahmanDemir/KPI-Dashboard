@@ -117,7 +117,8 @@ const normalizeImportedRecord = (record, sourceType, row) => {
         normalized.reach = toInteger(normalized.reach) ?? normalized.impressions ?? 0;
         normalized.conversions = toInteger(normalized.conversions) ?? 0;
         normalized.conversion_value = toNumber(normalized.conversion_value) ?? 0;
-        normalized.currency = normalized.currency || 'TRY';
+        
+        const originalCurrency = String(normalized.currency || 'TRY').toUpperCase().trim();
 
         if (sourceType === 'google_ads') {
             normalized.spend = (toNumber(normalized.spend) ?? 0) / 1000000;
@@ -128,6 +129,19 @@ const normalizeImportedRecord = (record, sourceType, row) => {
             normalized.cpc = toNumber(normalized.cpc) ?? 0;
             normalized.ctr = toNumber(normalized.ctr) ?? 0;
         }
+
+        // --- Currency Normalization ---
+        let exchangeRate = 1;
+        if (originalCurrency === 'USD') exchangeRate = 32.5;
+        if (originalCurrency === 'EUR') exchangeRate = 35.2;
+        if (originalCurrency === 'GBP') exchangeRate = 41.5;
+
+        if (exchangeRate !== 1) {
+            normalized.spend = normalized.spend * exchangeRate;
+            normalized.conversion_value = normalized.conversion_value * exchangeRate;
+            normalized.cpc = normalized.cpc * exchangeRate;
+        }
+        normalized.currency = 'TRY'; // Her durumda ana paramiz TRY kabul edilecek
     }
 
     if (sourceType === 'funnel') {
@@ -223,9 +237,15 @@ const buildNormalizedRecords = (rows, importLog) => {
 
 const getDuplicateKey = (sourceType, record) => {
     if (sourceType === 'sales') return `sales::${record.order_id || ''}`;
-    if (sourceType === 'google_analytics') return `ga::${record.date || ''}::${record.source || ''}::${record.medium || ''}::${record.campaign_name || ''}`;
-    if (sourceType === 'meta_ads' || sourceType === 'google_ads') return `ads::${record.platform || ''}::${record.date || ''}::${record.campaign_name || ''}::${record.adset || record.ad_group || ''}::${record.ad_name || ''}`;
-    if (sourceType === 'funnel') return `funnel::${record.date || ''}::${record.channel || ''}::${record.device || ''}::${record.step_order || ''}`;
+    if (sourceType === 'google_analytics')
+        // GA: tarih + kaynak + medium + kampanya + kanal + cihaz kombinasyonu
+        return `ga::${record.date || ''}::${record.source || ''}::${record.medium || ''}::${record.campaign_name || ''}::${record.channel || ''}::${record.device || ''}`;
+    if (sourceType === 'meta_ads' || sourceType === 'google_ads')
+        // Ads: platform_id (campaign/ad ID) varsa onu kullan — en güvenilir benzersiz tanımlayıcı.
+        // Yoksa tüm metrik değerlerini de dahil et ki gerçek tekrarları yakala.
+        return `ads::${record.platform || ''}::${record.platform_id || ''}::${record.date || ''}::${record.campaign_name || ''}::${record.adset || record.ad_group || ''}::${record.ad_name || ''}::${record.impressions ?? ''}::${record.clicks ?? ''}::${record.spend ?? ''}`;
+    if (sourceType === 'funnel')
+        return `funnel::${record.date || ''}::${record.channel || ''}::${record.device || ''}::${record.step_order || ''}::${record.step_name || ''}`;
     return null;
 };
 
@@ -266,45 +286,64 @@ const validateNormalizedRecord = (sourceType, record) => {
 };
 
 const findDatabaseDuplicate = async (sourceType, record) => {
+    // Sales: order_id gerçek bir benzersiz anahtardır, import'tan bağımsız kontrol et.
     if (sourceType === 'sales' && record.order_id) {
         return SalesData.findOne({ where: { order_id: record.order_id }, attributes: ['id'], raw: true });
     }
 
+    // Google Analytics: aynı import_id içinde zaten in-file duplicate kontrolü var.
+    // DB kontrolü: aynı tarih+kaynak+medium+kampanya+kanal+cihaz kombinasyonu başka bir import'ta var mı?
     if (sourceType === 'google_analytics') {
+        if (!record.import_id) return null;
         return TrafficData.findOne({
             where: {
                 date: record.date,
                 source: record.source || null,
                 medium: record.medium || null,
-                campaign_name: record.campaign_name || null
+                campaign_name: record.campaign_name || null,
+                channel: record.channel || null,
+                device: record.device || null,
+                // Farklı import'larda aynı satır zaten doğal duplicate sayılır.
+                import_id: { [Op.ne]: record.import_id }
             },
             attributes: ['id'],
             raw: true
         });
     }
 
+    // Ads (Meta / Google Ads):
+    // platform_id varsa en güvenilir kıstas; yoksa tüm boyutlarla kontrol et.
+    // Ancak DB duplicate kontrolünü SADECE farklı import'lara karşı yap —
+    // silip tekrar yükleyen kullanıcılar yanlış bloke edilir aksi takdirde.
     if (sourceType === 'meta_ads' || sourceType === 'google_ads') {
-        return AdsData.findOne({
-            where: {
-                platform: record.platform,
-                date: record.date,
-                campaign_name: record.campaign_name,
-                ...(record.adset ? { adset: record.adset } : {}),
-                ...(record.ad_group ? { ad_group: record.ad_group } : {}),
-                ...(record.ad_name ? { ad_name: record.ad_name } : {})
-            },
-            attributes: ['id'],
-            raw: true
-        });
+        if (!record.import_id) return null;
+        const where = {
+            platform: record.platform,
+            date: record.date,
+            campaign_name: record.campaign_name,
+            import_id: { [Op.ne]: record.import_id }
+        };
+        // platform_id varsa ekle (en güvenilir benzersiz tanımlayıcı)
+        if (record.platform_id) where.platform_id = record.platform_id;
+        // Yoksa diğer boyutlarla daralt
+        if (!record.platform_id) {
+            if (record.adset)    where.adset    = record.adset;
+            if (record.ad_group) where.ad_group = record.ad_group;
+            if (record.ad_name)  where.ad_name  = record.ad_name;
+        }
+        return AdsData.findOne({ where, attributes: ['id'], raw: true });
     }
 
+    // Funnel: step_order + step_name + kanal + cihaz kombinasyonu
     if (sourceType === 'funnel') {
+        if (!record.import_id) return null;
         return FunnelData.findOne({
             where: {
                 date: record.date,
                 channel: record.channel || null,
                 device: record.device || null,
-                step_order: record.step_order
+                step_order: record.step_order,
+                import_id: { [Op.ne]: record.import_id }
             },
             attributes: ['id'],
             raw: true
@@ -314,6 +353,8 @@ const findDatabaseDuplicate = async (sourceType, record) => {
     return null;
 };
 
+// analyzeImport: sadece dosya icindeki dogrulama ve duplicate kontrolu yapar.
+// DB'ye seri sorgu atilmaz — N+1 sorgu felaketi onlenmistir.
 const analyzeImport = async (importLog) => {
     const rows = await parseImportFile(importLog);
     const records = buildNormalizedRecords(rows, importLog);
@@ -331,11 +372,6 @@ const analyzeImport = async (importLog) => {
 
         if (duplicateKey) {
             seen.add(duplicateKey);
-        }
-
-        const dbDuplicate = rowErrors.length === 0 ? await findDatabaseDuplicate(importLog.source_type, item.normalized) : null;
-        if (dbDuplicate) {
-            rowErrors.push({ field: 'duplicate', message: 'Ayni kayit veritabaninda zaten mevcut.' });
         }
 
         if (rowErrors.length > 0) {
@@ -501,7 +537,7 @@ const validateImport = async (req, res) => {
         }
 
         const analysis = await analyzeImport(importLog);
-        const nextStatus = analysis.errors.length > 0 ? 'failed' : 'processing';
+        const nextStatus = analysis.validRecords.length > 0 ? 'processing' : 'failed';
 
         await importLog.update({
             status: nextStatus,
@@ -513,14 +549,14 @@ const validateImport = async (req, res) => {
         await writeAudit(req, 'import_validate', importLog.id, { row_count: analysis.rowCount, error_count: analysis.errors.length });
 
         return successResponse(res, {
-            valid: analysis.errors.length === 0,
+            valid: analysis.validRecords.length > 0,
             row_count: analysis.rowCount,
             valid_row_count: analysis.validRecords.length,
             error_count: analysis.errors.length,
             errors: analysis.errors.slice(0, 20),
             message: analysis.errors.length === 0
-                ? 'Dogrulama basarili. Veri commit icin hazir.'
-                : 'Dogrulama tamamlandi. Hatali satirlari duzeltmeden commit edemezsiniz.'
+                ? 'Doğrulama başarılı. Veri commit için hazır.'
+                : `${analysis.validRecords.length} geçerli, ${analysis.errors.length} hatalı satır bulundu. Hatalı olanlar atlanarak commit yapılabilir.`
         });
     } catch (err) {
         if (err.message === 'FILE_NOT_FOUND') {
@@ -541,6 +577,14 @@ const getErrors = async (req, res) => {
     }
 };
 
+// Yardimci: buyuk dizileri kucuk parcalara (chunk) bolerek toplu insert yapar.
+const bulkInsertChunked = async (Model, records, chunkSize = 500) => {
+    for (let i = 0; i < records.length; i += chunkSize) {
+        const chunk = records.slice(i, i + chunkSize);
+        await Model.bulkCreate(chunk, { ignoreDuplicates: true });
+    }
+};
+
 const commitImport = async (req, res) => {
     try {
         const importLog = await ensureImportOwnership(req, req.params.id);
@@ -551,38 +595,55 @@ const commitImport = async (req, res) => {
             return errorResponse(res, 400, 'ALREADY_COMPLETED', 'Bu dosya zaten sisteme islenmis.');
         }
 
-        const analysis = await analyzeImport(importLog);
-        if (analysis.errors.length > 0) {
-            await importLog.update({
-                status: 'failed',
-                row_count: analysis.rowCount,
-                error_count: analysis.errors.length,
-                error_detail: analysis.errors
-            });
-            return errorResponse(res, 422, 'IMPORT_VALIDATION_FAILED', 'Import dogrulamasinda hata var. Commit islemi durduruldu.', analysis.errors.slice(0, 20));
-        }
-
         const targetTable = resolveTargetModel(importLog.source_type);
         if (!targetTable) {
             return errorResponse(res, 400, 'INVALID_SOURCE', 'Gecersiz veri kaynagi.');
         }
 
-        await targetTable.bulkCreate(analysis.validRecords);
+        // Validate adiminda hesaplanan sonuclar ImportLog'da sakli — tekrar analiz etmeye gerek yok.
+        // Ancak dosya hala 'processing' durumundaysa (validate gececli gectiyse) dogrudan kayded.
+        const savedErrorCount  = importLog.error_count  || 0;
+        const savedRowCount    = importLog.row_count    || 0;
+        const savedErrors      = importLog.error_detail || [];
+
+        // Dosyayi okuyup gecerli kayitlari yeniden olustur (sadece dosya okuma + normalize, DB sorgusu yok)
+        const analysis = await analyzeImport(importLog);
+
+        if (analysis.validRecords.length === 0) {
+            await importLog.update({
+                status: 'failed',
+                row_count: analysis.rowCount,
+                error_count: analysis.errors.length,
+                error_detail: analysis.errors.slice(0, 500) // JSON boyutunu sinirla
+            });
+            return errorResponse(res, 422, 'NO_VALID_RECORDS', 'Gecerli satir bulunamadi, tum satirlar hatali.', analysis.errors.slice(0, 20));
+        }
+
+        // 500'er satirlik parcalarla insert et — buyuk dosyalarda timeout onlenir
+        await bulkInsertChunked(targetTable, analysis.validRecords, 500);
         await KpiCache.destroy({ where: {} });
 
         await importLog.update({
             status: 'completed',
             completed_at: new Date(),
             row_count: analysis.rowCount,
-            error_count: 0,
-            error_detail: []
+            error_count: analysis.errors.length,
+            error_detail: analysis.errors.slice(0, 500) // JSON boyutunu sinirla
         });
 
-        await writeAudit(req, 'import_commit', importLog.id, { row_count: analysis.validRecords.length, source_type: importLog.source_type });
+        await writeAudit(req, 'import_commit', importLog.id, {
+            valid_rows: analysis.validRecords.length,
+            error_rows: analysis.errors.length,
+            source_type: importLog.source_type
+        });
 
         return successResponse(res, {
-            message: 'Veri basariyla kaydedildi.',
-            row_count: analysis.validRecords.length
+            message: analysis.errors.length > 0
+                ? `${analysis.validRecords.length} satir kaydedildi, ${analysis.errors.length} satir atlandi.`
+                : 'Tum veriler basariyla kaydedildi.',
+            valid_row_count: analysis.validRecords.length,
+            error_count: analysis.errors.length,
+            errors: analysis.errors.slice(0, 20)
         });
     } catch (err) {
         console.error('[IMPORT COMMIT] Error:', err);
