@@ -13,7 +13,9 @@ const STATUS_MAP = {
 
 const SOURCE_LABEL = {
     sales:            'Satış Verisi',
+    order_items:      'Sipariş Kalemleri',
     google_analytics: 'Google Analytics',
+    ga4_items:        'GA4 Ürün Etkileşimleri',
     meta_ads:         'Meta Ads',
     google_ads:       'Google Ads',
     funnel:           'Funnel Verisi',
@@ -392,7 +394,9 @@ export default function ImportPage() {
 
     const sourceTypes = [
         { value: 'sales', label: 'Satış Verisi' },
+        { value: 'order_items', label: 'Sipariş Kalemleri' },
         { value: 'google_analytics', label: 'Google Analytics' },
+        { value: 'ga4_items', label: 'GA4 Ürün Etkileşimleri' },
         { value: 'meta_ads', label: 'Meta Ads' },
         { value: 'google_ads', label: 'Google Ads' },
         { value: 'funnel', label: 'Funnel Verisi' },
@@ -400,7 +404,9 @@ export default function ImportPage() {
 
     const sourceColumns = {
         sales: ['order_id', 'order_date', 'customer_id', 'channel', 'source', 'medium', 'campaign_name', 'product_name', 'product_category', 'product_sku', 'product_count', 'order_revenue', 'discount_amount', 'refund_amount', 'order_status', 'city', 'country', 'device', 'payment_method'],
+        order_items: ['order_id', 'line_id', 'product_sku', 'product_name', 'product_category', 'product_category2', 'product_brand', 'product_count', 'unit_price', 'order_revenue', 'discount_amount', 'refund_amount'],
         google_analytics: ['date', 'source', 'medium', 'campaign_name', 'channel_group', 'channel', 'device', 'city', 'sessions', 'users', 'new_users', 'bounce_rate', 'avg_session_duration', 'pages_per_session', 'pages_viewed', 'conversions', 'revenue'],
+        ga4_items: ['date', 'product_sku', 'product_name', 'product_category', 'product_category2', 'product_brand', 'items_viewed', 'items_added_to_cart', 'items_checked_out', 'items_purchased', 'item_revenue', 'item_list_views', 'item_list_clicks', 'cart_to_view_rate'],
         meta_ads: ['date', 'campaign_name', 'platform_id', 'adset', 'ad_name', 'impressions', 'clicks', 'reach', 'spend', 'ctr', 'cpc', 'conversions', 'conversion_value', 'currency'],
         google_ads: ['date', 'campaign_name', 'platform_id', 'ad_group', 'ad_name', 'impressions', 'clicks', 'reach', 'spend', 'ctr', 'cpc', 'conversions', 'conversion_value', 'currency'],
         funnel: ['date', 'channel', 'device', 'step_name', 'step_order', 'session_count'],
@@ -517,7 +523,23 @@ export default function ImportPage() {
             <style>{`
                 @keyframes spin { to { transform: rotate(360deg); } }
                 @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+                @keyframes pulseData { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
             `}</style>
+
+            {/* Committing Overlay */}
+            {isCommitting && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--color-bg-primary)',
+                    backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-primary)'
+                }}>
+                    <div style={{ width: '80px', height: '80px', border: '6px solid var(--color-border)', borderTopColor: 'var(--color-accent-primary)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '32px' }} />
+                    <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '12px', animation: 'pulseData 2s infinite' }}>Dosya İçe Aktarılıyor...</h2>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '16px', maxWidth: '450px', textAlign: 'center', lineHeight: '1.6' }}>
+                        Lütfen bu sayfadan ayrılmayın veya kapatmayın. Veri boyutuna bağlı olarak bu işlem <strong>birkaç dakika</strong> sürebilir. Veriler arka planda eşleştiriliyor ve temizleniyor.
+                    </p>
+                </div>
+            )}
 
             {/* Page Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>

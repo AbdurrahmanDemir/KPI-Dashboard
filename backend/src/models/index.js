@@ -48,19 +48,19 @@ User.hasMany(ReportSchedule, { foreignKey: 'user_id', as: 'report_schedules' });
 ReportSchedule.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // ImportLog → TrafficData (1:N)
-ImportLog.hasMany(TrafficData, { foreignKey: 'import_id', as: 'traffic_data' });
+ImportLog.hasMany(TrafficData, { foreignKey: 'import_id', as: 'traffic_data', onDelete: 'CASCADE' });
 TrafficData.belongsTo(ImportLog, { foreignKey: 'import_id', as: 'import' });
 
 // ImportLog → AdsData (1:N)
-ImportLog.hasMany(AdsData, { foreignKey: 'import_id', as: 'ads_data' });
+ImportLog.hasMany(AdsData, { foreignKey: 'import_id', as: 'ads_data', onDelete: 'CASCADE' });
 AdsData.belongsTo(ImportLog, { foreignKey: 'import_id', as: 'import' });
 
 // ImportLog → SalesData (1:N)
-ImportLog.hasMany(SalesData, { foreignKey: 'import_id', as: 'sales_data' });
+ImportLog.hasMany(SalesData, { foreignKey: 'import_id', as: 'sales_data', onDelete: 'CASCADE' });
 SalesData.belongsTo(ImportLog, { foreignKey: 'import_id', as: 'import' });
 
 // ImportLog → FunnelData (1:N)
-ImportLog.hasMany(FunnelData, { foreignKey: 'import_id', as: 'funnel_data' });
+ImportLog.hasMany(FunnelData, { foreignKey: 'import_id', as: 'funnel_data', onDelete: 'CASCADE' });
 FunnelData.belongsTo(ImportLog, { foreignKey: 'import_id', as: 'import' });
 
 // ─── Export ───────────────────────────────────────────────────────────────────

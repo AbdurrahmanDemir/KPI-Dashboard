@@ -27,7 +27,9 @@ const ImportLog = sequelize.define(
                 'meta_ads',
                 'google_ads',
                 'sales',
-                'funnel'
+                'funnel',
+                'order_items',
+                'ga4_items'
             ),
             allowNull: false,
         },

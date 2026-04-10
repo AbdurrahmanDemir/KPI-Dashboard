@@ -22,6 +22,20 @@ const SOURCE_FIELDS = {
         'order_status',
         'payment_method'
     ],
+    order_items: [
+        'order_id',
+        'line_id',
+        'product_sku',
+        'product_name',
+        'product_category',
+        'product_category2',
+        'product_brand',
+        'product_count',
+        'unit_price',
+        'order_revenue',
+        'discount_amount',
+        'refund_amount'
+    ],
     google_analytics: [
         'date',
         'source',
@@ -40,6 +54,22 @@ const SOURCE_FIELDS = {
         'pages_viewed',
         'conversions',
         'revenue'
+    ],
+    ga4_items: [
+        'date',
+        'product_sku',
+        'product_name',
+        'product_category',
+        'product_category2',
+        'product_brand',
+        'items_viewed',
+        'items_added_to_cart',
+        'items_checked_out',
+        'items_purchased',
+        'item_revenue',
+        'item_list_views',
+        'item_list_clicks',
+        'cart_to_view_rate'
     ],
     meta_ads: [
         'date',
@@ -100,6 +130,20 @@ const FIELD_ALIASES = {
         order_status: ['order_status', 'status'],
         payment_method: ['payment_method', 'payment']
     },
+    order_items: {
+        order_id: ['order_id'],
+        line_id: ['line_id'],
+        product_sku: ['product_sku', 'item_id', 'sku'],
+        product_name: ['product_name', 'item_name'],
+        product_category: ['product_category', 'item_category'],
+        product_category2: ['product_category2', 'item_category2'],
+        product_brand: ['product_brand', 'item_brand', 'brand'],
+        product_count: ['product_count', 'quantity'],
+        unit_price: ['unit_price', 'price'],
+        order_revenue: ['order_revenue', 'line_total', 'revenue'],
+        discount_amount: ['discount_amount', 'discount'],
+        refund_amount: ['refund_amount', 'refund']
+    },
     google_analytics: {
         date: ['date', 'segments.date', 'day'],
         source: ['source', 'sessionsource', 'sourceplatform'],
@@ -118,6 +162,22 @@ const FIELD_ALIASES = {
         pages_viewed: ['pages_viewed', 'screenpageviews', 'pageviews'],
         conversions: ['conversions', 'transactions', 'engagedsessions'],
         revenue: ['revenue', 'purchaserevenue']
+    },
+    ga4_items: {
+        date: ['date'],
+        product_sku: ['product_sku', 'itemid', 'item_id', 'sku'],
+        product_name: ['product_name', 'itemname', 'item_name'],
+        product_category: ['product_category', 'itemcategory', 'item_category'],
+        product_category2: ['product_category2', 'itemcategory2', 'item_category2'],
+        product_brand: ['product_brand', 'itembrand', 'item_brand', 'brand'],
+        items_viewed: ['items_viewed', 'itemsviewed'],
+        items_added_to_cart: ['items_added_to_cart', 'itemsaddedtocart'],
+        items_checked_out: ['items_checked_out', 'itemscheckedout'],
+        items_purchased: ['items_purchased', 'itemspurchased'],
+        item_revenue: ['item_revenue', 'itemrevenue'],
+        item_list_views: ['item_list_views', 'itemlistviews'],
+        item_list_clicks: ['item_list_clicks', 'itemlistclicks'],
+        cart_to_view_rate: ['cart_to_view_rate', 'carttoviewrate']
     },
     meta_ads: {
         date: ['date', 'date_start', 'date_stop'],
@@ -163,7 +223,9 @@ const FIELD_ALIASES = {
 
 const REQUIRED_FIELDS = {
     sales: ['order_id', 'order_date', 'customer_id', 'channel', 'order_revenue'],
+    order_items: ['order_id', 'product_sku', 'product_count', 'order_revenue'],
     google_analytics: ['date', 'channel_group', 'sessions', 'users'],
+    ga4_items: ['date', 'product_sku', 'items_viewed'],
     meta_ads: ['date', 'campaign_name', 'impressions', 'clicks', 'spend'],
     google_ads: ['date', 'campaign_name', 'impressions', 'clicks', 'spend'],
     funnel: ['date', 'channel', 'step_name', 'step_order', 'session_count']

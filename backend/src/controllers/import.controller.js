@@ -22,8 +22,8 @@ const getFileType = (filename) => {
 };
 
 const resolveTargetModel = (sourceType) => {
-    if (sourceType === 'sales') return SalesData;
-    if (sourceType === 'google_analytics') return TrafficData;
+    if (sourceType === 'sales' || sourceType === 'order_items') return SalesData;
+    if (sourceType === 'google_analytics' || sourceType === 'ga4_items') return TrafficData;
     if (sourceType === 'meta_ads' || sourceType === 'google_ads') return AdsData;
     if (sourceType === 'funnel') return FunnelData;
     return null;
@@ -91,6 +91,21 @@ const normalizeImportedRecord = (record, sourceType, row) => {
         normalized.attribution_source = normalized.attribution_source || 'analytics';
     }
 
+    if (sourceType === 'order_items') {
+        // order_items has no order_date in CSV, set a placeholder
+        normalized.order_date = normalized.order_date || toDateOnly(new Date().toISOString());
+        normalized.product_count = toInteger(normalized.product_count) ?? 1;
+        normalized.order_revenue = toNumber(normalized.order_revenue) ?? 0;
+        normalized.discount_amount = toNumber(normalized.discount_amount) ?? 0;
+        normalized.refund_amount = toNumber(normalized.refund_amount) ?? 0;
+        normalized.order_status = 'completed';
+        normalized.attribution_source = 'manual';
+        // Map fields to SalesData columns
+        if (!normalized.channel) normalized.channel = 'direct';
+        if (!normalized.customer_id) normalized.customer_id = normalized.order_id || 'unknown';
+        if (normalized.unit_price) normalized.unit_price = toNumber(normalized.unit_price);
+    }
+
     if (sourceType === 'google_analytics') {
         normalized.date = toDateOnly(normalized.date);
         normalized.sessions = toInteger(normalized.sessions) ?? 0;
@@ -108,6 +123,26 @@ const normalizeImportedRecord = (record, sourceType, row) => {
         normalized.campaign_name = normalized.campaign_name || row.sessionCampaignName || null;
         normalized.device = normalized.device || row.deviceCategory || null;
         normalized.city = normalized.city || row.city || null;
+    }
+
+    if (sourceType === 'ga4_items') {
+        normalized.date = toDateOnly(normalized.date);
+        // Map ga4_items fields to TrafficData-compatible fields
+        normalized.sessions = toInteger(normalized.items_viewed) ?? 0;
+        normalized.users = toInteger(normalized.items_purchased) ?? 0;
+        normalized.new_users = toInteger(normalized.items_added_to_cart) ?? 0;
+        normalized.conversions = toInteger(normalized.items_purchased) ?? 0;
+        normalized.revenue = toNumber(normalized.item_revenue) ?? 0;
+        normalized.bounce_rate = toNumber(normalized.cart_to_view_rate) ?? 0;
+        normalized.pages_viewed = toInteger(normalized.item_list_views) ?? 0;
+        normalized.pages_per_session = toInteger(normalized.item_list_clicks) ?? 0;
+        normalized.avg_session_duration = toInteger(normalized.items_checked_out) ?? 0;
+        // Set channel info from product data
+        normalized.channel_group = normalized.product_category || 'ga4_item';
+        normalized.channel = normalized.product_brand || 'ga4_item';
+        normalized.source = 'ga4_items';
+        normalized.medium = normalized.product_sku || null;
+        normalized.campaign_name = normalized.product_name || null;
     }
 
     if (sourceType === 'meta_ads' || sourceType === 'google_ads') {
@@ -164,6 +199,19 @@ const applySourceDefaults = (record, sourceType, row) => {
 
         if (record.avg_session_duration === undefined && row.avg_duration !== undefined) {
             record.avg_session_duration = row.avg_duration;
+        }
+    }
+
+    if (sourceType === 'ga4_items') {
+        if (!record.channel) {
+            record.channel = record.product_brand || 'ga4_item';
+        }
+    }
+
+    if (sourceType === 'order_items') {
+        // Ensure order_id uniqueness by appending line_id
+        if (record.line_id && record.order_id) {
+            record.order_id = `${record.order_id}-L${record.line_id}`;
         }
     }
 
@@ -237,9 +285,12 @@ const buildNormalizedRecords = (rows, importLog) => {
 
 const getDuplicateKey = (sourceType, record) => {
     if (sourceType === 'sales') return `sales::${record.order_id || ''}`;
+    if (sourceType === 'order_items') return `order_items::${record.order_id || ''}`;
     if (sourceType === 'google_analytics')
         // GA: tarih + kaynak + medium + kampanya + kanal + cihaz kombinasyonu
         return `ga::${record.date || ''}::${record.source || ''}::${record.medium || ''}::${record.campaign_name || ''}::${record.channel || ''}::${record.device || ''}`;
+    if (sourceType === 'ga4_items')
+        return `ga4_items::${record.date || ''}::${record.medium || ''}`;  // medium = product_sku
     if (sourceType === 'meta_ads' || sourceType === 'google_ads')
         // Ads: platform_id (campaign/ad ID) varsa onu kullan — en güvenilir benzersiz tanımlayıcı.
         // Yoksa tüm metrik değerlerini de dahil et ki gerçek tekrarları yakala.
