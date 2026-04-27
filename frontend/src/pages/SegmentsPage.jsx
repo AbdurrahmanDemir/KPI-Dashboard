@@ -128,6 +128,9 @@ export default function SegmentsPage() {
                     data={data || []}
                     exportFileName="segmentler.csv"
                     rowsPerPage={10}
+                    isLoading={isLoading}
+                    enableGrouping
+                    groupByOptions={['name']}
                 />
             )}
         </div>

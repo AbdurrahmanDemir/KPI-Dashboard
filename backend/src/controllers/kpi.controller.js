@@ -8,7 +8,8 @@ const {
     getMarketingChannelPerformance,
     getSalesCityPerformance,
     getProductPerformanceSummary,
-    getAttributionOverview
+    getAttributionOverview,
+    getSalesAdFormatPerformance
 } = require('../services/kpi.service');
 const { successResponse, errorResponse } = require('../utils/response');
 const crypto = require('crypto');
@@ -62,7 +63,7 @@ const getSummary = async (req, res) => {
         }
 
         // 3. Cache'de yoksa veya süresi dolmuşsa hesapla
-        const [traffic, ads, sales, channelPerformance, platformDistribution, marketingChannels, salesByCity, productPerformance, attributionAnalysis] = await Promise.all([
+        const [traffic, ads, sales, channelPerformance, platformDistribution, marketingChannels, salesByCity, productPerformance, attributionAnalysis, salesAdFormatPerformance] = await Promise.all([
             getTrafficKPIs(filters),
             getAdsKPIs(filters),
             getSalesKPIs(filters),
@@ -71,7 +72,8 @@ const getSummary = async (req, res) => {
             getMarketingChannelPerformance(filters),
             getSalesCityPerformance(filters),
             getProductPerformanceSummary(filters),
-            getAttributionOverview(filters)
+            getAttributionOverview(filters),
+            getSalesAdFormatPerformance(filters)
         ]);
 
         const resultData = {
@@ -83,7 +85,8 @@ const getSummary = async (req, res) => {
                 platform_distribution: platformDistribution,
                 marketing_channels: marketingChannels,
                 sales_by_city: salesByCity,
-                product_performance: productPerformance
+                product_performance: productPerformance,
+                sales_by_ad_format: salesAdFormatPerformance
             },
             attribution: attributionAnalysis
         };

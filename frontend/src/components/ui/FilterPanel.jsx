@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useFilterStore from '../../store/filterStore';
 import api from '../../services/api';
+import { getActiveFilterCount, getComparisonLabel } from '../../utils/filterComparison';
 
 export default function FilterPanel() {
     const { filters, setFilter, setFilters, resetFilters } = useFilterStore();
     const queryClient = useQueryClient();
     const [segmentName, setSegmentName] = useState('');
     const [showSaveInput, setShowSaveInput] = useState(false);
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+    const activeFilterCount = useMemo(() => getActiveFilterCount(filters), [filters]);
+    const comparisonLabel = useMemo(() => getComparisonLabel(filters), [filters]);
 
     // Hızlı tarih aralığı seçenekleri
     const handleQuickDate = (daysBack) => {
@@ -27,6 +32,10 @@ export default function FilterPanel() {
             start_date: start.toISOString().slice(0, 10),
             end_date: now.toISOString().slice(0, 10)
         });
+    };
+
+    const handleComparisonToggle = (checked) => {
+        setFilter('compare_previous_period', checked);
     };
 
     const { data: segmentsData } = useQuery({
@@ -118,6 +127,7 @@ export default function FilterPanel() {
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     {[
                         { label: 'Son 7G', fn: () => handleQuickDate(7) },
+                        { label: 'Son 28G', fn: () => handleQuickDate(28) },
                         { label: 'Son 30G', fn: () => handleQuickDate(30) },
                         { label: 'Bu Ay', fn: handleThisMonth },
                         { label: 'Son 90G', fn: () => handleQuickDate(90) },
@@ -131,6 +141,23 @@ export default function FilterPanel() {
                 </div>
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '240px' }}>
+                <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontWeight: 500 }}>Donem Karsilastirma</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--color-border)', background: 'var(--color-bg-primary)', cursor: 'pointer' }}>
+                    <input
+                        type="checkbox"
+                        checked={Boolean(filters.compare_previous_period)}
+                        onChange={(e) => handleComparisonToggle(e.target.checked)}
+                    />
+                    <span style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>Onceki donem ile karsilastir</span>
+                </label>
+                {filters.compare_previous_period && (
+                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                        Karsilastirma araligi: {comparisonLabel || 'Tarih secimi gerekli'}
+                    </span>
+                )}
+            </div>
+
             {renderSelect('channel', 'Kanal', filterOptions?.channels || [])}
             {renderSelect('platform', 'Platform', filterOptions?.platforms || [])}
             {renderSelect('campaign_name', 'Kampanya', filterOptions?.campaigns || [])}
@@ -142,16 +169,13 @@ export default function FilterPanel() {
             {/* Gelişmiş Filtreler (Advanced) Toggle */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', color: 'transparent' }}>-</label>
-                <button onClick={() => {
-                        const isVisible = document.getElementById('advanced-filters').style.display === 'flex';
-                        document.getElementById('advanced-filters').style.display = isVisible ? 'none' : 'flex';
-                    }} 
+                <button onClick={() => setShowAdvancedFilters((prev) => !prev)}
                     style={{ padding: '8px 12px', borderRadius: '6px', border: '1px dashed var(--color-text-muted)', background: 'transparent', color: 'var(--color-text-primary)', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
-                    🛠 Gelişmiş Filtreler
+                    {showAdvancedFilters ? '▲ Gelismis Filtreleri Gizle' : '🛠 Gelismis Filtreler'}
                 </button>
             </div>
 
-            <div id="advanced-filters" style={{ width: '100%', display: 'none', gap: '16px', background: 'rgba(0,0,0,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border-light)', marginTop: '8px', flexWrap: 'wrap' }}>
+            <div style={{ width: '100%', display: showAdvancedFilters ? 'flex' : 'none', gap: '16px', background: 'rgba(0,0,0,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border-light)', marginTop: '8px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontWeight: 500 }}>Min. Ciro (TL)</label>
                     <input type="number" placeholder="Örn: 5000" value={filters.min_revenue || ''} onChange={(e) => setFilter('min_revenue', e.target.value)}
@@ -175,6 +199,20 @@ export default function FilterPanel() {
             </div>
 
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', position: 'relative', flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginRight: '6px' }}>
+                    <span style={{
+                        padding: '7px 10px',
+                        borderRadius: '999px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        border: '1px solid var(--color-border)',
+                        background: 'var(--color-bg-primary)',
+                        color: 'var(--color-text-secondary)'
+                    }}>
+                        {activeFilterCount} aktif filtre
+                    </span>
+                </div>
+
                 {showSaveInput ? (
                     <>
                         <input

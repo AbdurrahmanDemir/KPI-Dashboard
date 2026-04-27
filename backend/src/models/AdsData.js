@@ -24,6 +24,7 @@ const AdsData = sequelize.define(
         campaign_name: {
             type: DataTypes.STRING(255),
             allowNull: false,
+            defaultValue: '',
         },
         adset: {
             type: DataTypes.STRING(255),
@@ -58,7 +59,7 @@ const AdsData = sequelize.define(
             defaultValue: 0.0,
         },
         ctr: {
-            type: DataTypes.DECIMAL(8, 6),
+            type: DataTypes.DECIMAL(10, 4),
             allowNull: false,
             defaultValue: 0.0,
         },

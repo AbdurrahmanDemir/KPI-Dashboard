@@ -1,22 +1,25 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
 export default function BarChart({ data = [], isLoading, onBarClick, title = 'Kanal Bazlı Ciro' }) {
+    const containerStyle = { background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 };
+
     if (isLoading) {
         return (
-            <div style={{ height: '320px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', background: 'var(--color-bg-secondary)', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 }}>
-                Grafik Yükleniyor...
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
+                <LoadingState message="Bar grafik yukleniyor..." height={250} />
             </div>
         );
     }
 
     if (data.length === 0) {
         return (
-            <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 }}>
+            <div style={containerStyle}>
                 <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
-                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>
-                    Gösterilecek veri bulunamadı.
-                </div>
+                <EmptyState message="Gosterilecek kanal verisi bulunamadi." height={250} />
             </div>
         );
     }
@@ -81,7 +84,7 @@ export default function BarChart({ data = [], isLoading, onBarClick, title = 'Ka
     const series = [{ name: 'Ciro', data: data.map((d) => d.revenue) }];
 
     return (
-        <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 }}>
+        <div style={containerStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>{title}</h3>
                 {onBarClick && (

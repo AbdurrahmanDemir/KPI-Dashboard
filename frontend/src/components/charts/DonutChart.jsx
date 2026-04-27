@@ -1,18 +1,25 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
-export default function DonutChart({ data = [], isLoading }) {
+export default function DonutChart({ data = [], isLoading, title = 'Platform Dagilimi' }) {
+    const containerStyle = { background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 };
+
     if (isLoading) {
-        return <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Grafik Yukleniyor...</div>;
+        return (
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
+                <LoadingState message="Dagilim grafik yukleniyor..." height={250} />
+            </div>
+        );
     }
 
     if (data.length === 0) {
         return (
-            <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>Platform Dagilimi</h3>
-                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>
-                    Gosterilecek veri bulunamadi.
-                </div>
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
+                <EmptyState message="Gosterilecek dagilim verisi bulunamadi." height={250} />
             </div>
         );
     }
@@ -56,8 +63,8 @@ export default function DonutChart({ data = [], isLoading }) {
     };
 
     return (
-        <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)', flex: 1 }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>Platform Dagilimi</h3>
+        <div style={containerStyle}>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
             <Chart options={options} series={series} type="donut" height={300} />
         </div>
     );

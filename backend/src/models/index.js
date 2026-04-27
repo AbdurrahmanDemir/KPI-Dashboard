@@ -1,4 +1,5 @@
 /**
+/**
  * Sequelize Modelleri — Merkezi Index
  * Tüm modelleri ve aralarındaki ilişkileri tanımlar
  */
@@ -20,6 +21,7 @@ const Segment = require('./Segment');
 const AuditLog = require('./AuditLog');
 const RefreshToken = require('./RefreshToken');
 const ReportSchedule = require('./ReportSchedule');
+const Integration = require('./Integration');
 
 // ─── İlişkiler ────────────────────────────────────────────────────────────────
 
@@ -80,4 +82,5 @@ module.exports = {
     AuditLog,
     RefreshToken,
     ReportSchedule,
+    Integration,
 };

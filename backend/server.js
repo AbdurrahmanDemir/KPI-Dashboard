@@ -82,6 +82,7 @@ app.use('/api/users', require('./src/routes/user.routes'));
 app.use('/api/export', require('./src/routes/export.routes'));
 app.use('/api/report-schedules', require('./src/routes/reportSchedule.routes'));
 app.use('/api/logs', require('./src/routes/log.routes'));
+app.use('/api/integrations', require('./src/routes/integration.routes'));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {

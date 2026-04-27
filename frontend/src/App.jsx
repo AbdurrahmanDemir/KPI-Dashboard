@@ -20,6 +20,7 @@ const UsersPage = lazy(() => import('./pages/UsersPage'));
 const LogsPage = lazy(() => import('./pages/LogsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const SegmentsPage = lazy(() => import('./pages/SegmentsPage'));
+const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
 
 const PageLoader = () => (
   <div style={{
@@ -55,6 +56,7 @@ function App() {
           <Route path="/import" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><ImportPage /></ProtectedRoute>} />
           <Route path="/export" element={<ProtectedRoute><ExportPage /></ProtectedRoute>} />
           <Route path="/segments" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><SegmentsPage /></ProtectedRoute>} />
+          <Route path="/integrations" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><IntegrationsPage /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute requiredRole="admin"><UsersPage /></ProtectedRoute>} />
           <Route path="/logs" element={<ProtectedRoute requiredRole="admin"><LogsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><SettingsPage /></ProtectedRoute>} />

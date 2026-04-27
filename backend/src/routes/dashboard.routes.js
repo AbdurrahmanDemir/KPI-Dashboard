@@ -6,6 +6,9 @@ const {
     getChannelPerformance,
     getPlatformPerformance,
     getCampaignPerformance,
+    getCampaignProductPerformance,
+    getMonthlyBrandSales,
+    getMonthlyCampaignSales,
     getProductPerformance,
     getAttributionAnalysis,
     getFunnel,
@@ -16,6 +19,9 @@ router.get('/trend', authenticate, getTrend);
 router.get('/channel-performance', authenticate, getChannelPerformance);
 router.get('/platform-performance', authenticate, getPlatformPerformance);
 router.get('/campaign-performance', authenticate, getCampaignPerformance);
+router.get('/campaign-product-performance', authenticate, getCampaignProductPerformance);
+router.get('/monthly-brand-sales', authenticate, getMonthlyBrandSales);
+router.get('/monthly-campaign-sales', authenticate, getMonthlyCampaignSales);
 router.get('/product-performance', authenticate, getProductPerformance);
 router.get('/attribution-analysis', authenticate, getAttributionAnalysis);
 router.get('/funnel', authenticate, getFunnel);

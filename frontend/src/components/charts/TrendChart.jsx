@@ -1,13 +1,27 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
-export default function TrendChart({ data = [], isLoading }) {
+export default function TrendChart({ data = [], isLoading, title = 'Günlük Ciro & Sipariş Trendi' }) {
+    const containerStyle = { background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' };
+
     if (isLoading) {
-        return <div style={{ height: '350px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Grafik Yükleniyor...</div>;
+        return (
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
+                <LoadingState message="Trend grafik yukleniyor..." height={300} />
+            </div>
+        );
     }
 
     if (!data.length) {
-        return <div style={{ height: '350px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Mevcut filtrede veri bulunamadı.</div>;
+        return (
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
+                <EmptyState message="Mevcut filtrede trend verisi bulunamadi." height={300} />
+            </div>
+        );
     }
 
     const series = [
@@ -67,8 +81,8 @@ export default function TrendChart({ data = [], isLoading }) {
     };
 
     return (
-        <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>Günlük Ciro & Sipariş Trendi</h3>
+        <div style={containerStyle}>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
             <Chart options={options} series={series} type="area" height={350} />
         </div>
     );

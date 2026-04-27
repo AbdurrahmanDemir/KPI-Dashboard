@@ -7,20 +7,41 @@ import DataTable from '../components/ui/DataTable';
 import BarChart from '../components/charts/BarChart';
 import DonutChart from '../components/charts/DonutChart';
 import KpiCard from '../components/ui/KpiCard';
+import {
+    buildComparisonFilters,
+    buildQueryString,
+    calculateChange,
+    getComparisonLabel
+} from '../utils/filterComparison';
 
 export default function ChannelAnalysisPage() {
     const { filters, setFilter } = useFilterStore();
-    const queryString = new URLSearchParams(filters).toString();
+    const queryString = buildQueryString(filters);
+    const comparisonFilters = buildComparisonFilters(filters);
+    const comparisonQueryString = comparisonFilters ? buildQueryString(comparisonFilters) : '';
+    const comparisonLabel = filters.compare_previous_period
+        ? `onceki donem (${getComparisonLabel(filters)})`
+        : 'onceki donem';
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['channel-performance', queryString],
         queryFn: async () => (await api.get(`/dashboard/channel-performance?${queryString}`)).data.data || []
     });
 
+    const { data: comparisonData = [] } = useQuery({
+        enabled: Boolean(comparisonFilters),
+        queryKey: ['channel-performance-comparison', comparisonQueryString],
+        queryFn: async () => (await api.get(`/dashboard/channel-performance?${comparisonQueryString}`)).data.data || []
+    });
+
     const rows = data || [];
+    const previousRows = comparisonData || [];
 
     const totalRevenue = rows.reduce((sum, r) => sum + (r.revenue || 0), 0);
     const topChannel = rows[0];
+    const previousTotalRevenue = previousRows.reduce((sum, r) => sum + (r.revenue || 0), 0);
+    const previousTopChannelRevenue = previousRows[0]?.revenue || 0;
+    const compareEnabled = Boolean(comparisonFilters);
 
     const donutData = rows.map(r => ({ platform: r.channel, sessions: r.revenue }));
 
@@ -66,9 +87,9 @@ export default function ChannelAnalysisPage() {
 
             {/* Özet KPI Kartları */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-                <KpiCard title="Toplam Ciro" value={totalRevenue} prefix="₺" isLoading={isLoading} />
+                <KpiCard title="Toplam Ciro" value={totalRevenue} prefix="₺" change={compareEnabled ? calculateChange(totalRevenue, previousTotalRevenue) : undefined} comparisonLabel={comparisonLabel} isLoading={isLoading} />
                 <KpiCard title="Aktif Kanal Sayısı" value={rows.length} isLoading={isLoading} />
-                <KpiCard title="En İyi Kanal Ciro" value={topChannel?.revenue || 0} prefix="₺" isLoading={isLoading} subtitle={topChannel?.channel || '—'} />
+                <KpiCard title="En İyi Kanal Ciro" value={topChannel?.revenue || 0} prefix="₺" change={compareEnabled ? calculateChange(topChannel?.revenue || 0, previousTopChannelRevenue) : undefined} comparisonLabel={comparisonLabel} isLoading={isLoading} subtitle={topChannel?.channel || '—'} />
                 <KpiCard
                     title="En İyi Kanal Payı"
                     value={totalRevenue > 0 && topChannel ? ((topChannel.revenue / totalRevenue) * 100).toFixed(1) : 0}
@@ -90,6 +111,9 @@ export default function ChannelAnalysisPage() {
                 data={rows}
                 exportFileName="kanal_performansi.csv"
                 rowsPerPage={8}
+                isLoading={isLoading}
+                enableGrouping
+                groupByOptions={['channel']}
             />
         </div>
     );

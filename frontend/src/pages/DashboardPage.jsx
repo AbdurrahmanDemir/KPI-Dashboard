@@ -1,6 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import api from '../services/api';
 import useFilterStore from '../store/filterStore';
 import FilterPanel from '../components/ui/FilterPanel';
@@ -8,13 +7,25 @@ import KpiCard from '../components/ui/KpiCard';
 import TrendChart from '../components/charts/TrendChart';
 import BarChart from '../components/charts/BarChart';
 import DonutChart from '../components/charts/DonutChart';
+import {
+    buildComparisonFilters,
+    buildQueryString,
+    calculateChange,
+    getComparisonLabel
+} from '../utils/filterComparison';
 
-const DEFAULT_CARD_ORDER = ['revenue', 'orders', 'cvr', 'roas', 'ad_spend', 'cpc', 'sessions', 'refund_rate'];
+const OVERVIEW_CARD_KEYS = ['users', 'sessions', 'engagement_rate', 'conversions', 'revenue'];
+
+const formatCompact = (value) => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(value || 0);
 
 export default function DashboardPage() {
     const { filters, setFilter } = useFilterStore();
-    const queryString = new URLSearchParams(filters).toString();
-    const [cardOrder, setCardOrder] = useState(DEFAULT_CARD_ORDER);
+    const queryString = buildQueryString(filters);
+    const comparisonFilters = buildComparisonFilters(filters);
+    const comparisonQueryString = comparisonFilters ? buildQueryString(comparisonFilters) : '';
+    const comparisonLabel = filters.compare_previous_period
+        ? `onceki donem (${getComparisonLabel(filters)})`
+        : 'onceki donem';
 
     // Query 1: Özet KPI'lar
     const { data: summaryData, isLoading: isSummaryLoading, error: summaryError } = useQuery({
@@ -34,12 +45,21 @@ export default function DashboardPage() {
         }
     });
 
+    const { data: comparisonSummaryData } = useQuery({
+        enabled: Boolean(comparisonFilters),
+        queryKey: ['kpi-summary-comparison', comparisonQueryString],
+        queryFn: async () => {
+            const res = await api.get(`/kpi/summary?${comparisonQueryString}`);
+            return res.data.data;
+        }
+    });
+
     // Görünümü Kaydet
     const saveViewMutation = useMutation({
         mutationFn: async () => {
             await api.post('/views', {
                 name: `Görünüm - ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}`,
-                layout_config: { card_order: cardOrder, version: 1 },
+                layout_config: { card_order: OVERVIEW_CARD_KEYS, version: 2, profile: 'ga-inspired-overview' },
                 filter_config: filters
             });
         },
@@ -53,15 +73,6 @@ export default function DashboardPage() {
         setFilter('channel', filters.channel === val ? '' : val);
     }, [filters.channel, setFilter]);
 
-    // Drag-drop yeniden sıralama
-    const onDragEnd = (result) => {
-        if (!result.destination) return;
-        const newOrder = Array.from(cardOrder);
-        const [moved] = newOrder.splice(result.source.index, 1);
-        newOrder.splice(result.destination.index, 0, moved);
-        setCardOrder(newOrder);
-    };
-
     if (summaryError) {
         return (
             <div style={{ padding: 24, color: 'var(--color-accent-danger)', background: 'var(--color-bg-secondary)', borderRadius: 12, margin: 24 }}>
@@ -73,18 +84,50 @@ export default function DashboardPage() {
     const s = summaryData?.sales || {};
     const t = summaryData?.traffic || {};
     const a = summaryData?.ads || {};
+    const prevSales = comparisonSummaryData?.sales || {};
+    const prevTraffic = comparisonSummaryData?.traffic || {};
     const channelPerformance = summaryData?.breakdowns?.channel_performance || [];
     const platformDistribution = summaryData?.breakdowns?.platform_distribution || [];
+    const compareEnabled = Boolean(comparisonFilters);
 
     const CARDS = {
-        revenue:    { title: 'Toplam Ciro',          value: s.revenue || 0,      prefix: '₺' },
-        orders:     { title: 'Toplam Sipariş',        value: s.orders || 0,       prefix: '' },
-        cvr:        { title: 'Satış CVR',             value: t.cvr || 0,          suffix: '%' },
-        roas:       { title: 'ROAS (Analytics)',      value: a.roas || 0,         suffix: 'x' },
-        ad_spend:   { title: 'Reklam Harcaması',      value: a.spend || 0,        prefix: '₺' },
-        cpc:        { title: 'Tıklama Maliyeti (CPC)',value: a.cpc || 0,          prefix: '₺' },
-        sessions:   { title: 'Toplam Ziyaretçi',      value: t.sessions || 0,     prefix: '' },
-        refund_rate:{ title: 'İade Oranı',            value: s.refund_rate || 0,  suffix: '%' },
+        users: {
+            title: 'Aktif Kullanıcılar',
+            value: t.users || 0,
+            subtitle: `${formatCompact(t.new_users)} yeni kullanıcı`,
+            change: compareEnabled ? calculateChange(t.users || 0, prevTraffic.users || 0) : undefined
+        },
+        sessions: {
+            title: 'Oturumlar',
+            value: t.sessions || 0,
+            subtitle: `${formatCompact(a.clicks)} reklam tıklaması`,
+            change: compareEnabled ? calculateChange(t.sessions || 0, prevTraffic.sessions || 0) : undefined
+        },
+        engagement_rate: {
+            title: 'Etkileşim Oranı',
+            value: Math.max(0, 100 - (t.bounce_rate || 0)),
+            suffix: '%',
+            subtitle: `Hemen çıkma: ${(t.bounce_rate || 0).toFixed(2)}%`,
+            change: compareEnabled
+                ? calculateChange(
+                    Math.max(0, 100 - (t.bounce_rate || 0)),
+                    Math.max(0, 100 - (prevTraffic.bounce_rate || 0))
+                )
+                : undefined
+        },
+        conversions: {
+            title: 'Dönüşümler',
+            value: t.conversions || 0,
+            subtitle: `CVR: ${(t.cvr || 0).toFixed(2)}%`,
+            change: compareEnabled ? calculateChange(t.conversions || 0, prevTraffic.conversions || 0) : undefined
+        },
+        revenue: {
+            title: 'Toplam Gelir',
+            value: s.revenue || 0,
+            prefix: '₺',
+            subtitle: `${formatCompact(s.orders)} sipariş`,
+            change: compareEnabled ? calculateChange(s.revenue || 0, prevSales.revenue || 0) : undefined
+        }
     };
 
     return (
@@ -94,7 +137,7 @@ export default function DashboardPage() {
                 <div>
                     <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Genel Bakış Dashboard</h1>
                     <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-                        Ciro, trafik ve reklam performansınızı tek bir ekranda analiz edin.
+                        Google Analytics yaklaşımına yakın sade görünüm: Acquisition, Engagement ve Monetization.
                     </p>
                 </div>
                 <button
@@ -120,73 +163,57 @@ export default function DashboardPage() {
 
             <FilterPanel />
 
-            {/* Drag-drop KPI Kartları */}
-            <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId="kpi-cards" direction="horizontal">
-                    {(provided) => (
-                        <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                                gap: '20px',
-                                marginBottom: '24px'
-                            }}
-                        >
-                            {cardOrder.map((cardKey, index) => {
-                                const card = CARDS[cardKey];
-                                if (!card) return null;
-                                return (
-                                    <Draggable key={cardKey} draggableId={cardKey} index={index}>
-                                        {(dragProvided, snapshot) => (
-                                            <div
-                                                ref={dragProvided.innerRef}
-                                                {...dragProvided.draggableProps}
-                                                {...dragProvided.dragHandleProps}
-                                                style={{
-                                                    ...dragProvided.draggableProps.style,
-                                                    opacity: snapshot.isDragging ? 0.85 : 1,
-                                                    transform: snapshot.isDragging
-                                                        ? dragProvided.draggableProps.style?.transform
-                                                        : undefined,
-                                                    cursor: 'grab',
-                                                }}
-                                                title="Sürükleyerek yeniden sıralayın"
-                                            >
-                                                <KpiCard
-                                                    title={card.title}
-                                                    value={card.value}
-                                                    prefix={card.prefix}
-                                                    suffix={card.suffix}
-                                                    isLoading={isSummaryLoading}
-                                                />
-                                            </div>
-                                        )}
-                                    </Draggable>
-                                );
-                            })}
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-            </DragDropContext>
+            <div style={{ marginBottom: '12px', fontSize: '13px', color: 'var(--color-text-muted)' }}>
+                Çekirdek metrikler: Kullanıcı, Oturum, Etkileşim, Dönüşüm, Gelir
+            </div>
+
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: '20px',
+                    marginBottom: '24px'
+                }}
+            >
+                {OVERVIEW_CARD_KEYS.map((cardKey) => {
+                    const card = CARDS[cardKey];
+                    if (!card) return null;
+                    return (
+                        <KpiCard
+                            key={cardKey}
+                            title={card.title}
+                            value={card.value}
+                            prefix={card.prefix}
+                            suffix={card.suffix}
+                            change={card.change}
+                            comparisonLabel={comparisonLabel}
+                            subtitle={card.subtitle}
+                            isLoading={isSummaryLoading}
+                        />
+                    );
+                })}
+            </div>
 
             {/* Grafikler */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
-                <TrendChart data={trendData} isLoading={isTrendLoading} />
-                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                    <BarChart
-                        isLoading={isSummaryLoading}
-                        data={channelPerformance}
-                        onBarClick={handleChannelClick}
-                        title="Kanal Bazlı Ciro (Tıkla → Filtrele)"
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+                    <TrendChart
+                        data={trendData}
+                        isLoading={isTrendLoading}
+                        title="Monetization Trendi (Gelir ve Sipariş)"
                     />
                     <DonutChart
                         isLoading={isSummaryLoading}
                         data={platformDistribution}
+                        title="Acquisition Dağılımı (Oturumlar)"
                     />
                 </div>
+                <BarChart
+                    isLoading={isSummaryLoading}
+                    data={channelPerformance}
+                    onBarClick={handleChannelClick}
+                    title="Kanal Bazlı Gelir (Acquisition → Revenue)"
+                />
             </div>
 
             {/* Aktif filtre bildirimi */}

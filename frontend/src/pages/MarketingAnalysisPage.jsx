@@ -7,6 +7,12 @@ import BarChart from '../components/charts/BarChart';
 import ScatterChart from '../components/charts/ScatterChart';
 import KpiCard from '../components/ui/KpiCard';
 import api from '../services/api';
+import {
+    buildComparisonFilters,
+    buildQueryString,
+    calculateChange,
+    getComparisonLabel
+} from '../utils/filterComparison';
 
 const sectionCard = {
     background: 'var(--color-bg-secondary)',
@@ -17,7 +23,12 @@ const sectionCard = {
 
 export default function MarketingAnalysisPage() {
     const { filters } = useFilterStore();
-    const queryString = new URLSearchParams(filters).toString();
+    const queryString = buildQueryString(filters);
+    const comparisonFilters = buildComparisonFilters(filters);
+    const comparisonQueryString = comparisonFilters ? buildQueryString(comparisonFilters) : '';
+    const comparisonLabel = filters.compare_previous_period
+        ? `onceki donem (${getComparisonLabel(filters)})`
+        : 'onceki donem';
 
     const { data: summaryData, isLoading, error } = useQuery({
         queryKey: ['kpi-summary', queryString],
@@ -31,6 +42,15 @@ export default function MarketingAnalysisPage() {
         queryKey: ['attribution-analysis', queryString],
         queryFn: async () => {
             const res = await api.get(`/dashboard/attribution-analysis?${queryString}`);
+            return res.data.data;
+        }
+    });
+
+    const { data: comparisonSummaryData } = useQuery({
+        enabled: Boolean(comparisonFilters),
+        queryKey: ['marketing-summary-comparison', comparisonQueryString],
+        queryFn: async () => {
+            const res = await api.get(`/kpi/summary?${comparisonQueryString}`);
             return res.data.data;
         }
     });
@@ -52,9 +72,12 @@ export default function MarketingAnalysisPage() {
     });
 
     const m = summaryData?.ads || {};
+    const prevAds = comparisonSummaryData?.ads || {};
     const channelData = summaryData?.breakdowns?.marketing_channels || [];
     const attributionSummary = attributionData?.summary || summaryData?.attribution?.summary || {};
+    const prevAttributionSummary = comparisonSummaryData?.attribution?.summary || {};
     const attributionRows = attributionData?.rows || summaryData?.attribution?.rows || [];
+    const compareEnabled = Boolean(comparisonFilters);
 
     const channelColumns = [
         { key: 'channel', label: 'Kanal / Platform', sortable: true },
@@ -105,10 +128,10 @@ export default function MarketingAnalysisPage() {
             <FilterPanel />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-                <KpiCard title="Toplam Harcama" value={m.spend || 0} prefix="TL" isLoading={isLoading} />
-                <KpiCard title="Platform ROAS" value={attributionSummary.platform_reported_roas || 0} suffix="x" isLoading={isAttributionLoading} />
-                <KpiCard title="Analytics ROAS" value={attributionSummary.analytics_attributed_roas || 0} suffix="x" isLoading={isAttributionLoading} />
-                <KpiCard title="Attribution Farki" value={attributionSummary.attribution_gap || 0} prefix="TL" isLoading={isAttributionLoading} />
+                <KpiCard title="Toplam Harcama" value={m.spend || 0} prefix="TL" change={compareEnabled ? calculateChange(m.spend || 0, prevAds.spend || 0) : undefined} comparisonLabel={comparisonLabel} isLoading={isLoading} />
+                <KpiCard title="Platform ROAS" value={attributionSummary.platform_reported_roas || 0} suffix="x" change={compareEnabled ? calculateChange(attributionSummary.platform_reported_roas || 0, prevAttributionSummary.platform_reported_roas || 0) : undefined} comparisonLabel={comparisonLabel} isLoading={isAttributionLoading} />
+                <KpiCard title="Analytics ROAS" value={attributionSummary.analytics_attributed_roas || 0} suffix="x" change={compareEnabled ? calculateChange(attributionSummary.analytics_attributed_roas || 0, prevAttributionSummary.analytics_attributed_roas || 0) : undefined} comparisonLabel={comparisonLabel} isLoading={isAttributionLoading} />
+                <KpiCard title="Attribution Farki" value={attributionSummary.attribution_gap || 0} prefix="TL" change={compareEnabled ? calculateChange(attributionSummary.attribution_gap || 0, prevAttributionSummary.attribution_gap || 0) : undefined} comparisonLabel={comparisonLabel} isLoading={isAttributionLoading} />
             </div>
 
             {/* Aktif filtre bildirimi */}
@@ -152,6 +175,9 @@ export default function MarketingAnalysisPage() {
                 data={attributionRows}
                 exportFileName="attribution-analizi.csv"
                 rowsPerPage={6}
+                isLoading={isAttributionLoading}
+                enableGrouping
+                groupByOptions={['channel']}
             />
 
             <div style={{ height: '24px' }} />
@@ -162,6 +188,9 @@ export default function MarketingAnalysisPage() {
                 data={productData}
                 exportFileName="urun-performansi.csv"
                 rowsPerPage={6}
+                isLoading={isProductLoading}
+                enableGrouping
+                groupByOptions={['product_category', 'channel']}
             />
 
             <div style={{ height: '24px' }} />
@@ -172,6 +201,9 @@ export default function MarketingAnalysisPage() {
                 data={channelData}
                 exportFileName="kanal-performans.csv"
                 rowsPerPage={6}
+                isLoading={isLoading}
+                enableGrouping
+                groupByOptions={['channel']}
             />
 
             {(isProductLoading || isAttributionLoading) && (

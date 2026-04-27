@@ -63,10 +63,6 @@ export default function LogsPage() {
         }
     ];
 
-    if (isLoading) {
-        return <div style={{ padding: '24px' }}>Yükleniyor...</div>;
-    }
-
     return (
         <div style={{ padding: '24px', fontFamily: 'var(--font-sans)', color: 'var(--color-text-primary)' }}>
             <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Sistem Logları</h1>
@@ -92,6 +88,9 @@ export default function LogsPage() {
                 data={logsData}
                 exportFileName={`${activeTab}_logs.csv`}
                 rowsPerPage={10}
+                isLoading={isLoading}
+                enableGrouping
+                groupByOptions={['action', 'entity_type', 'user_id']}
             />
         </div>
     );

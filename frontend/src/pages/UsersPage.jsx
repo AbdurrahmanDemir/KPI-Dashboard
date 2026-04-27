@@ -65,8 +65,6 @@ export default function UsersPage() {
         { key: 'role_label', label: 'Rol Ozeti', formatter: (_, row) => roleLabel(row.role) }
     ];
 
-    if (isLoading) return <div style={{ padding: '24px' }}>Yukleniyor...</div>;
-
     return (
         <div style={{ padding: '24px', fontFamily: 'var(--font-sans)', color: 'var(--color-text-primary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
@@ -114,7 +112,15 @@ export default function UsersPage() {
                 </div>
             )}
 
-            <DataTable title="Sistem Kullanicilari" columns={columns} data={usersData} exportFileName="kullanicilar.csv" />
+            <DataTable
+                title="Sistem Kullanicilari"
+                columns={columns}
+                data={usersData}
+                exportFileName="kullanicilar.csv"
+                isLoading={isLoading}
+                enableGrouping
+                groupByOptions={['role', 'role_label']}
+            />
         </div>
     );
 }

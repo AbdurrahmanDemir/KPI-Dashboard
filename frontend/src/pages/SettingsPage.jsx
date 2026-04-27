@@ -9,7 +9,7 @@ export default function SettingsPage() {
     const queryClient = useQueryClient();
     const [mappingForm, setMappingForm] = useState({ source: '', medium: '', channel_group: '', platform: '', is_paid: false });
 
-    const { data: mappings } = useQuery({
+    const { data: mappings, isLoading } = useQuery({
         queryKey: ['channel-mappings'],
         queryFn: async () => (await api.get('/mappings/channels')).data.data || []
     });
@@ -82,7 +82,16 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            <DataTable title="Kanal Esleme Listesi" columns={columns} data={mappings || []} exportFileName="channel_mappings.csv" rowsPerPage={8} />
+            <DataTable
+                title="Kanal Esleme Listesi"
+                columns={columns}
+                data={mappings || []}
+                exportFileName="channel_mappings.csv"
+                rowsPerPage={8}
+                isLoading={isLoading}
+                enableGrouping
+                groupByOptions={['source', 'medium', 'channel_group', 'platform']}
+            />
         </div>
     );
 }

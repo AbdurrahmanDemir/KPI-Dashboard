@@ -3,13 +3,18 @@ import { create } from 'zustand';
 const defaultFilters = {
     start_date: '',
     end_date: '',
+    compare_previous_period: false,
     channel: '',
     platform: '',
     campaign_name: '',
     product_name: '',
     city: '',
     device: '',
-    country: ''
+    country: '',
+    min_revenue: '',
+    max_revenue: '',
+    min_roas: '',
+    min_orders: ''
 };
 
 /** URL'den başlangıç filtrelerini oku */
@@ -18,7 +23,14 @@ function readFiltersFromURL() {
     const filters = { ...defaultFilters };
     Object.keys(defaultFilters).forEach((key) => {
         const val = params.get(key);
-        if (val !== null) filters[key] = val;
+        if (val === null) return;
+
+        if (key === 'compare_previous_period') {
+            filters[key] = val === 'true';
+            return;
+        }
+
+        filters[key] = val;
     });
     return filters;
 }
@@ -27,7 +39,9 @@ function readFiltersFromURL() {
 function syncToURL(filters) {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.set(key, value);
+        if (value === '' || value === null || value === undefined) return;
+        if (key === 'compare_previous_period' && value !== true) return;
+        params.set(key, String(value));
     });
     const newSearch = params.toString();
     const newURL = newSearch

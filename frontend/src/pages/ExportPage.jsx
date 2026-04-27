@@ -93,6 +93,7 @@ export default function ExportPage() {
             setActionError('');
             const res = await api.get(`/export/${format}?${queryString}`, {
                 responseType: 'blob',
+                timeout: format === 'xlsx' ? 120000 : 30000,
             });
 
             const blob = new Blob([res.data], {
@@ -216,6 +217,19 @@ export default function ExportPage() {
                         {' '}
                         <strong>{filters.start_date || 'Tümü'} - {filters.end_date || 'Tümü'}</strong>
                     </p>
+                    <div style={{
+                        marginBottom: '16px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--color-border)',
+                        background: 'var(--color-bg-primary)',
+                        color: 'var(--color-text-secondary)',
+                        fontSize: '13px',
+                        lineHeight: 1.6
+                    }}>
+                        Excel raporu; KPI ozeti, trendler, kanal/kampanya/urun performansi, attribution, funnel, cohort,
+                        ham satis-trafik-reklam verileri ve yonetim tablolarini ayri sekmeler halinde indirir.
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <button
                             onClick={() => handleDownload('pdf')}
@@ -229,7 +243,7 @@ export default function ExportPage() {
                             disabled={downloadingFormat !== null}
                             style={{ ...primaryButtonStyle, background: '#3b82f6' }}
                         >
-                            {downloadingFormat === 'xlsx' ? 'Hazırlanıyor...' : 'Excel (XLSX) Olarak İndir'}
+                            {downloadingFormat === 'xlsx' ? 'Hazirlaniyor...' : 'Detayli Excel (XLSX) Indir'}
                         </button>
                         <button
                             onClick={() => handleDownload('csv')}

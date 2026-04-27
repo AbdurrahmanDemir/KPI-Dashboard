@@ -1,19 +1,29 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
 export default function CohortHeatmap({ data = [], isLoading }) {
+    const containerStyle = { background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' };
+
     if (isLoading) {
         return (
-            <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', background: 'var(--color-bg-secondary)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-                Grafik Yükleniyor...
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px', color: 'var(--color-text-primary)' }}>
+                    Cohort Retention Heatmap
+                </h3>
+                <LoadingState message="Cohort heatmap yukleniyor..." height={340} />
             </div>
         );
     }
 
     if (!data || !data.length) {
         return (
-            <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', background: 'var(--color-bg-secondary)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-                Mevcut filtrede cohort verisi bulunamadı.
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px', color: 'var(--color-text-primary)' }}>
+                    Cohort Retention Heatmap
+                </h3>
+                <EmptyState message="Mevcut filtrede cohort verisi bulunamadi." height={340} />
             </div>
         );
     }
@@ -94,7 +104,7 @@ export default function CohortHeatmap({ data = [], isLoading }) {
     };
 
     return (
-        <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+        <div style={containerStyle}>
             <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px', color: 'var(--color-text-primary)' }}>
                 Cohort Retention Heatmap
             </h3>

@@ -6,24 +6,50 @@ import FilterPanel from '../components/ui/FilterPanel';
 import DataTable from '../components/ui/DataTable';
 import FunnelChart from '../components/charts/FunnelChart';
 import KpiCard from '../components/ui/KpiCard';
+import {
+    buildComparisonFilters,
+    buildQueryString,
+    calculateChange,
+    getComparisonLabel
+} from '../utils/filterComparison';
 
 export default function FunnelAnalysisPage() {
     const { filters } = useFilterStore();
-    const queryString = new URLSearchParams(filters).toString();
+    const queryString = buildQueryString(filters);
+    const comparisonFilters = buildComparisonFilters(filters);
+    const comparisonQueryString = comparisonFilters ? buildQueryString(comparisonFilters) : '';
+    const comparisonLabel = filters.compare_previous_period
+        ? `onceki donem (${getComparisonLabel(filters)})`
+        : 'onceki donem';
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['funnel-performance', queryString],
         queryFn: async () => (await api.get(`/dashboard/funnel?${queryString}`)).data.data || []
     });
 
+    const { data: comparisonData = [] } = useQuery({
+        enabled: Boolean(comparisonFilters),
+        queryKey: ['funnel-performance-comparison', comparisonQueryString],
+        queryFn: async () => (await api.get(`/dashboard/funnel?${comparisonQueryString}`)).data.data || []
+    });
+
     const steps = data || [];
+    const previousSteps = comparisonData || [];
     const firstStep = steps[0];
     const lastStep = steps[steps.length - 1];
+    const previousFirstStep = previousSteps[0];
+    const previousLastStep = previousSteps[previousSteps.length - 1];
     const overallCvr = firstStep && lastStep && firstStep.session_count > 0
         ? ((lastStep.session_count / firstStep.session_count) * 100).toFixed(1)
         : 0;
+    const previousOverallCvr = previousFirstStep && previousLastStep && previousFirstStep.session_count > 0
+        ? ((previousLastStep.session_count / previousFirstStep.session_count) * 100)
+        : 0;
     const biggestDropoff = steps.reduce((max, step) =>
         (step.dropoff_rate || 0) > (max?.dropoff_rate || 0) ? step : max, null);
+    const previousBiggestDropoff = previousSteps.reduce((max, step) =>
+        (step.dropoff_rate || 0) > (max?.dropoff_rate || 0) ? step : max, null);
+    const compareEnabled = Boolean(comparisonFilters);
 
     const columns = [
         { key: 'step_order', label: 'Adım No', sortable: true },
@@ -55,23 +81,31 @@ export default function FunnelAnalysisPage() {
                 <KpiCard
                     title="Giriş Oturumu"
                     value={firstStep?.session_count || 0}
+                    change={compareEnabled ? calculateChange(firstStep?.session_count || 0, previousFirstStep?.session_count || 0) : undefined}
+                    comparisonLabel={comparisonLabel}
                     isLoading={isLoading}
                 />
                 <KpiCard
                     title="Satın Alma"
                     value={lastStep?.session_count || 0}
+                    change={compareEnabled ? calculateChange(lastStep?.session_count || 0, previousLastStep?.session_count || 0) : undefined}
+                    comparisonLabel={comparisonLabel}
                     isLoading={isLoading}
                 />
                 <KpiCard
                     title="Toplam Dönüşüm"
                     value={Number(overallCvr)}
                     suffix="%"
+                    change={compareEnabled ? calculateChange(Number(overallCvr), previousOverallCvr) : undefined}
+                    comparisonLabel={comparisonLabel}
                     isLoading={isLoading}
                 />
                 <KpiCard
                     title="En Büyük Kayıp Adımı"
                     value={biggestDropoff?.dropoff_rate || 0}
                     suffix="%"
+                    change={compareEnabled ? calculateChange(biggestDropoff?.dropoff_rate || 0, previousBiggestDropoff?.dropoff_rate || 0) : undefined}
+                    comparisonLabel={comparisonLabel}
                     isLoading={isLoading}
                     subtitle={biggestDropoff?.step_name || '—'}
                 />
@@ -89,6 +123,9 @@ export default function FunnelAnalysisPage() {
                 data={steps}
                 exportFileName="funnel_analizi.csv"
                 rowsPerPage={10}
+                isLoading={isLoading}
+                enableGrouping
+                groupByOptions={['step_name']}
             />
         </div>
     );

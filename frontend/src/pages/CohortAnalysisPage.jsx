@@ -6,17 +6,35 @@ import FilterPanel from '../components/ui/FilterPanel';
 import DataTable from '../components/ui/DataTable';
 import CohortHeatmap from '../components/charts/CohortHeatmap';
 import KpiCard from '../components/ui/KpiCard';
+import {
+    buildComparisonFilters,
+    buildQueryString,
+    calculateChange,
+    getComparisonLabel
+} from '../utils/filterComparison';
 
 export default function CohortAnalysisPage() {
     const { filters } = useFilterStore();
-    const queryString = new URLSearchParams(filters).toString();
+    const queryString = buildQueryString(filters);
+    const comparisonFilters = buildComparisonFilters(filters);
+    const comparisonQueryString = comparisonFilters ? buildQueryString(comparisonFilters) : '';
+    const comparisonLabel = filters.compare_previous_period
+        ? `onceki donem (${getComparisonLabel(filters)})`
+        : 'onceki donem';
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['cohort-performance', queryString],
         queryFn: async () => (await api.get(`/dashboard/cohort?${queryString}`)).data.data || []
     });
 
+    const { data: comparisonData = [] } = useQuery({
+        enabled: Boolean(comparisonFilters),
+        queryKey: ['cohort-performance-comparison', comparisonQueryString],
+        queryFn: async () => (await api.get(`/dashboard/cohort?${comparisonQueryString}`)).data.data || []
+    });
+
     const rows = data || [];
+    const previousRows = comparisonData || [];
 
     // Month 0 cohort boyutları toplamı = toplam müşteri sayısı
     const totalCustomers = rows
@@ -33,6 +51,20 @@ export default function CohortAnalysisPage() {
     const bestCohort = rows
         .filter(r => r.month_offset === 1)
         .sort((a, b) => b.retention_rate - a.retention_rate)[0];
+
+    const previousTotalCustomers = previousRows
+        .filter((r) => r.month_offset === 0)
+        .reduce((sum, r) => sum + (r.customers || 0), 0);
+
+    const previousMonth1Rows = previousRows.filter((r) => r.month_offset === 1);
+    const previousAvgMonth1Retention = previousMonth1Rows.length > 0
+        ? previousMonth1Rows.reduce((sum, r) => sum + (r.retention_rate || 0), 0) / previousMonth1Rows.length
+        : 0;
+
+    const previousBestCohort = previousRows
+        .filter((r) => r.month_offset === 1)
+        .sort((a, b) => b.retention_rate - a.retention_rate)[0];
+    const compareEnabled = Boolean(comparisonFilters);
 
     const columns = [
         { key: 'cohort_month', label: 'Cohort Ayı', sortable: true },
@@ -64,24 +96,32 @@ export default function CohortAnalysisPage() {
                 <KpiCard
                     title="Toplam Müşteri (Cohort)"
                     value={totalCustomers}
+                    change={compareEnabled ? calculateChange(totalCustomers, previousTotalCustomers) : undefined}
+                    comparisonLabel={comparisonLabel}
                     isLoading={isLoading}
                 />
                 <KpiCard
                     title="Ort. 1. Ay Retention"
                     value={Number(avgMonth1Retention)}
                     suffix="%"
+                    change={compareEnabled ? calculateChange(Number(avgMonth1Retention), previousAvgMonth1Retention) : undefined}
+                    comparisonLabel={comparisonLabel}
                     isLoading={isLoading}
                 />
                 <KpiCard
                     title="En İyi Cohort Ayı"
                     value={bestCohort?.retention_rate || 0}
                     suffix="%"
+                    change={compareEnabled ? calculateChange(bestCohort?.retention_rate || 0, previousBestCohort?.retention_rate || 0) : undefined}
+                    comparisonLabel={comparisonLabel}
                     isLoading={isLoading}
                     subtitle={bestCohort?.cohort_month || '—'}
                 />
                 <KpiCard
                     title="Cohort Sayısı"
                     value={[...new Set(rows.map(r => r.cohort_month))].length}
+                    change={compareEnabled ? calculateChange([...new Set(rows.map((r) => r.cohort_month))].length, [...new Set(previousRows.map((r) => r.cohort_month))].length) : undefined}
+                    comparisonLabel={comparisonLabel}
                     isLoading={isLoading}
                 />
             </div>
@@ -98,6 +138,9 @@ export default function CohortAnalysisPage() {
                 data={rows}
                 exportFileName="cohort_analizi.csv"
                 rowsPerPage={12}
+                isLoading={isLoading}
+                enableGrouping
+                groupByOptions={['cohort_month']}
             />
         </div>
     );

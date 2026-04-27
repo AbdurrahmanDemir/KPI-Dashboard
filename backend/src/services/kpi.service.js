@@ -540,6 +540,43 @@ const getAttributionOverview = async (filters) => {
     return buildAttributionRows(trafficRows, adsRows, salesRows, filters);
 };
 
+const getSalesAdFormatPerformance = async (filters) => {
+    const rows = await getSalesRows(filters, true);
+    
+    const grouped = rows.reduce((acc, row) => {
+        let format = 'Diğer';
+        const channel = (row.channel || '').toLowerCase();
+        const campaign = (row.campaign_name || '').toLowerCase();
+        
+        if (channel.includes('video') || campaign.includes('video')) {
+            format = 'Video Reklam';
+        } else if (channel.includes('display') || campaign.includes('display') || campaign.includes('gorsel') || campaign.includes('carousel')) {
+            format = 'Görsel Reklam (Display)';
+        } else if (channel.includes('search') || campaign.includes('search')) {
+            format = 'Arama Ağı (Search)';
+        } else if (channel.includes('shopping') || campaign.includes('shopping') || campaign.includes('pmax')) {
+            format = 'Alışveriş (Shopping)';
+        } else if (channel.includes('social') || campaign.includes('meta')) {
+            format = 'Sosyal Medya';
+        } else if (channel.includes('organic')) {
+            format = 'Organik Trafik';
+        }
+
+        acc[format] ||= { id: format, format, revenue: 0, orders: 0 };
+        acc[format].revenue += Number(row.order_revenue || 0);
+        acc[format].orders += 1;
+        return acc;
+    }, {});
+
+    return applyAdvancedFilters(
+        Object.values(grouped).map((row) => ({
+            ...row,
+            revenue: round(row.revenue)
+        })),
+        filters
+    ).sort((a, b) => b.revenue - a.revenue);
+};
+
 module.exports = {
     getTrafficKPIs,
     getAdsKPIs,
@@ -550,5 +587,6 @@ module.exports = {
     getMarketingChannelPerformance,
     getSalesCityPerformance,
     getProductPerformanceSummary,
-    getAttributionOverview
+    getAttributionOverview,
+    getSalesAdFormatPerformance
 };

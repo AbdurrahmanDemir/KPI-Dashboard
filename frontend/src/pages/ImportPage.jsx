@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
@@ -176,6 +177,9 @@ const ImportHistory = ({ onRefresh }) => {
             showToast(res.data.data.message || 'Kalıntı veriler başarıyla temizlendi.');
             fetchImports(page);
             if (onRefresh) onRefresh();
+            setMessage(`Dosya yüklendi. Veri kaynağı otomatik olarak "${SOURCE_LABEL[detectedSourceType] || detectedSourceType}" olarak algılandı.`);
+            setMessage(`Dosya yüklendi. Veri kaynağı otomatik olarak "${SOURCE_LABEL[detectedSourceType] || detectedSourceType}" olarak algılandı.`);
+            setTimeout(() => setMessage(`Dosya yüklendi. Veri kaynağı otomatik olarak "${SOURCE_LABEL[detectedSourceType] || detectedSourceType}" olarak algılandı.`), 0);
         } catch (err) {
             showToast(err.response?.data?.error?.message || 'Kalıntılar temizlenemedi.', 'error');
             setLoading(false);
@@ -379,7 +383,7 @@ export default function ImportPage() {
 
     // ── New Import wizard state ──
     const [step, setStep] = useState(1);
-    const [sourceType, setSourceType] = useState('sales');
+    const [sourceType, setSourceType] = useState('');
     const [uploading, setUploading] = useState(false);
     const [importId, setImportId] = useState(null);
     const [previewData, setPreviewData] = useState(null);
@@ -434,7 +438,6 @@ export default function ImportPage() {
 
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('source_type', sourceType);
 
         try {
             const uploadRes = await api.post('/imports', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -442,19 +445,22 @@ export default function ImportPage() {
             const previewRes = await api.get(`/imports/${id}/preview`);
             const preview = previewRes.data.data.preview || [];
             const suggestedMapping = previewRes.data.data.suggested_mapping || {};
+            const detectedSourceType = previewRes.data.data.source_type || uploadRes.data.data.source_type || '';
 
             setImportId(id);
+            setSourceType(detectedSourceType);
             setPreviewData(preview);
             setMapping(suggestedMapping);
             setAutoMappedCount(Object.keys(suggestedMapping).length);
             setStep(2);
+            setMessage(`Dosya yüklendi. Veri kaynağı otomatik olarak "${SOURCE_LABEL[detectedSourceType] || detectedSourceType}" olarak algılandı.`);
             setMessage('Dosya yüklendi. Kolon eşlemesini kontrol edin.');
         } catch (err) {
             setError(err.response?.data?.error?.message || 'Yükleme sırasında hata oluştu.');
         } finally {
             setUploading(false);
         }
-    }, [sourceType]);
+    }, []);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -547,6 +553,21 @@ export default function ImportPage() {
                     <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>Veri İçe Aktarma</h1>
                     <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>CSV, XLSX veya JSON formatında veri yükleyin ve yönetin.</p>
                 </div>
+                <Link
+                    to="/integrations"
+                    style={{
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--color-accent-primary)',
+                        color: 'var(--color-accent-primary)',
+                        textDecoration: 'none',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        background: 'rgba(99,102,241,0.08)'
+                    }}
+                >
+                    Google / Meta API
+                </Link>
                 {activeTab === 'new' && step > 1 && step < 4 && (
                     <button
                         onClick={cancelImport}
@@ -617,7 +638,12 @@ export default function ImportPage() {
                     {/* Step 1 */}
                     {step === 1 && (
                         <>
-                            <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '320px' }}>
+                            <div style={{ marginBottom: '24px', padding: '14px 16px', background: 'rgba(99,102,241,0.06)', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.2)', color: 'var(--color-text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
+                                Dosya başlıklarına bakılarak veri kaynağı otomatik algılanır.
+                                <br />
+                                Desteklenen kaynaklar: Satış, Sipariş Kalemleri, Google Analytics, GA4 Ürün, Meta Ads, Google Ads ve Funnel.
+                            </div>
+                            <div style={{ display: 'none' }}>
                                 <label style={{ fontSize: '14px', fontWeight: 600 }}>Veri Kaynağı Seçin</label>
                                 <select
                                     value={sourceType}
@@ -662,6 +688,10 @@ export default function ImportPage() {
                             <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Sistem Kolonlarını Eşleştirin</h3>
                             <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px', fontSize: '14px' }}>Yüklediğiniz dosyadaki kolonları hedef sistem kolonlarıyla eşleştirin.</p>
 
+                            <div style={{ marginBottom: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '999px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', fontSize: '13px', fontWeight: 700 }}>
+                                Algılanan kaynak: {SOURCE_LABEL[sourceType] || sourceType}
+                            </div>
+
                             <div style={{ background: 'var(--color-bg-secondary)', borderRadius: '10px', marginBottom: '20px', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
                                 {Object.keys(previewData[0] || {}).map((fileCol, idx) => (
                                     <div key={fileCol} style={{
@@ -676,7 +706,7 @@ export default function ImportPage() {
                                             onChange={(e) => setMapping((prev) => ({ ...prev, [fileCol]: e.target.value }))}
                                         >
                                             <option value="">-- Yoksay --</option>
-                                            {sourceColumns[sourceType].map((sc) => <option key={sc} value={sc}>{sc}</option>)}
+                                            {(sourceColumns[sourceType] || []).map((sc) => <option key={sc} value={sc}>{sc}</option>)}
                                         </select>
                                     </div>
                                 ))}

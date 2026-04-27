@@ -26,4 +26,30 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return;
+          }
+
+          if (id.includes('apexcharts') || id.includes('react-apexcharts')) {
+            return 'charts-vendor';
+          }
+
+          if (id.includes('@tanstack/react-query')) {
+            return 'query-vendor';
+          }
+
+          if (id.includes('zustand')) {
+            return 'state-vendor';
+          }
+
+          return 'vendor';
+        },
+      },
+    },
+  },
 });

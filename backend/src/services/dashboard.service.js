@@ -5,6 +5,22 @@ const AdsData = require('../models/AdsData');
 const SalesData = require('../models/SalesData');
 
 const round = (value, digits = 2) => Number(Number(value || 0).toFixed(digits));
+const KNOWN_BRANDS = [
+    'New Balance',
+    'The North Face',
+    'Nike',
+    'Adidas',
+    'Puma',
+    'Salomon',
+    'Columbia',
+    'Lacoste',
+    'Asics',
+    'Reebok',
+    'Under Armour',
+    'Skechers',
+    'Converse',
+    'Vans'
+];
 
 const buildDateWhere = (filters, field = 'date') => {
     const where = {};
@@ -63,6 +79,14 @@ const labelForChannel = (channel) => {
         other: 'Other'
     };
     return labels[channel] || channel;
+};
+
+const extractBrand = (productName = '', fallback = 'Bilinmiyor') => {
+    const normalizedName = String(productName || '').trim().toLowerCase();
+    const matchedBrand = KNOWN_BRANDS.find((brand) => normalizedName.startsWith(brand.toLowerCase()));
+    if (matchedBrand) return matchedBrand;
+    const firstToken = String(productName || '').trim().split(/\s+/)[0];
+    return firstToken || fallback;
 };
 
 const getChannelPerformance = async (filters) => {
@@ -176,6 +200,7 @@ const getCampaignPerformance = async (filters) => {
     }
 
     for (const row of salesRows) {
+        if (!row.campaign_name) continue;
         if (!matchesChannel(row.channel, filters.channel)) continue;
         const channel = normalizeChannel(row.channel);
         const key = `${channel}::${row.campaign_name}`;
@@ -196,6 +221,7 @@ const getCampaignPerformance = async (filters) => {
     }
 
     for (const row of trafficRows) {
+        if (!row.campaign_name) continue;
         if (!matchesChannel(row.channel, filters.channel)) continue;
         const channel = normalizeChannel(row.channel);
         const key = `${channel}::${row.campaign_name}`;
@@ -231,6 +257,152 @@ const getCampaignPerformance = async (filters) => {
             analytics_roas: round(analyticsRoas)
         };
     }), filters).sort((a, b) => b.analytics_revenue - a.analytics_revenue);
+};
+
+const getCampaignProductPerformance = async (filters) => {
+    const [adRows, salesRows] = await Promise.all([
+        AdsData.findAll({
+            where: {
+                ...buildDateWhere(filters),
+                ...(filters.platform ? { platform: filters.platform } : {}),
+                ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {})
+            },
+            attributes: ['campaign_name', 'platform', 'spend', 'clicks', 'impressions', 'conversions', 'conversion_value'],
+            raw: true
+        }),
+        SalesData.findAll({
+            where: {
+                ...buildDateWhere(filters, 'order_date'),
+                ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {}),
+                ...(filters.product_name ? { product_name: filters.product_name } : {}),
+                ...(filters.city ? { city: filters.city } : {}),
+                ...(filters.device ? { device: filters.device } : {}),
+                ...(filters.country ? { country: filters.country } : {}),
+                order_status: 'completed'
+            },
+            attributes: ['campaign_name', 'channel', 'product_name', 'product_category', 'product_count', 'order_revenue'],
+            raw: true
+        })
+    ]);
+
+    const spendByCampaign = adRows.reduce((acc, row) => {
+        if (!matchesChannel(row.platform, filters.channel)) return acc;
+        const campaign = row.campaign_name || 'Kampanyasiz';
+        acc[campaign] ||= { spend: 0, clicks: 0, impressions: 0, platform_conversions: 0, platform_revenue: 0, platform: labelForChannel(row.platform) };
+        acc[campaign].spend += Number(row.spend || 0);
+        acc[campaign].clicks += Number(row.clicks || 0);
+        acc[campaign].impressions += Number(row.impressions || 0);
+        acc[campaign].platform_conversions += Number(row.conversions || 0);
+        acc[campaign].platform_revenue += Number(row.conversion_value || 0);
+        return acc;
+    }, {});
+
+    const totalRevenueByCampaign = {};
+    const grouped = salesRows.reduce((acc, row) => {
+        if (!row.campaign_name) return acc;
+        if (!matchesChannel(row.channel, filters.channel)) return acc;
+        const campaign = row.campaign_name || 'Kampanyasiz';
+        const product = row.product_name || 'Tanimsiz urun';
+        const key = `${campaign}::${product}`;
+        const revenue = Number(row.order_revenue || 0);
+        totalRevenueByCampaign[campaign] = (totalRevenueByCampaign[campaign] || 0) + revenue;
+        acc[key] ||= {
+            campaign_name: campaign,
+            platform: spendByCampaign[campaign]?.platform || labelForChannel(normalizeChannel(row.channel)),
+            product_name: product,
+            product_category: row.product_category || 'Kategorisiz',
+            brand: extractBrand(product, row.product_category),
+            orders: 0,
+            items_sold: 0,
+            analytics_revenue: 0
+        };
+        acc[key].orders += 1;
+        acc[key].items_sold += Number(row.product_count || 0);
+        acc[key].analytics_revenue += revenue;
+        return acc;
+    }, {});
+
+    return applyAdvancedFilters(Object.values(grouped).map((row) => {
+        const campaignSpend = spendByCampaign[row.campaign_name]?.spend || 0;
+        const campaignRevenue = totalRevenueByCampaign[row.campaign_name] || 0;
+        const allocatedSpend = campaignRevenue > 0 ? campaignSpend * (row.analytics_revenue / campaignRevenue) : 0;
+        return {
+            ...row,
+            analytics_revenue: round(row.analytics_revenue),
+            estimated_spend: round(allocatedSpend),
+            estimated_roas: round(allocatedSpend > 0 ? row.analytics_revenue / allocatedSpend : 0),
+            spend_allocation_method: 'Kampanya harcamasi urun ciro payina gore dagitildi'
+        };
+    }), filters).sort((a, b) => b.analytics_revenue - a.analytics_revenue);
+};
+
+const getMonthlyBrandSales = async (filters) => {
+    const rows = await SalesData.findAll({
+        where: {
+            ...buildDateWhere(filters, 'order_date'),
+            ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {}),
+            ...(filters.product_name ? { product_name: filters.product_name } : {}),
+            ...(filters.city ? { city: filters.city } : {}),
+            ...(filters.device ? { device: filters.device } : {}),
+            ...(filters.country ? { country: filters.country } : {}),
+            order_status: 'completed'
+        },
+        attributes: ['order_date', 'channel', 'campaign_name', 'product_name', 'product_category', 'product_count', 'order_revenue'],
+        raw: true
+    });
+
+    const grouped = rows.reduce((acc, row) => {
+        if (!matchesChannel(row.channel, filters.channel)) return acc;
+        const month = String(row.order_date).slice(0, 7);
+        const brand = extractBrand(row.product_name, row.product_category);
+        const key = `${month}::${brand}`;
+        acc[key] ||= { month, brand, revenue: 0, orders: 0, items_sold: 0 };
+        acc[key].revenue += Number(row.order_revenue || 0);
+        acc[key].orders += 1;
+        acc[key].items_sold += Number(row.product_count || 0);
+        return acc;
+    }, {});
+
+    return applyAdvancedFilters(Object.values(grouped).map((row) => ({
+        ...row,
+        revenue: round(row.revenue),
+        aov: round(row.orders > 0 ? row.revenue / row.orders : 0)
+    })), filters).sort((a, b) => b.month.localeCompare(a.month) || b.revenue - a.revenue);
+};
+
+const getMonthlyCampaignSales = async (filters) => {
+    const rows = await SalesData.findAll({
+        where: {
+            ...buildDateWhere(filters, 'order_date'),
+            ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {}),
+            ...(filters.product_name ? { product_name: filters.product_name } : {}),
+            ...(filters.city ? { city: filters.city } : {}),
+            ...(filters.device ? { device: filters.device } : {}),
+            ...(filters.country ? { country: filters.country } : {}),
+            order_status: 'completed'
+        },
+        attributes: ['order_date', 'channel', 'campaign_name', 'product_count', 'order_revenue'],
+        raw: true
+    });
+
+    const grouped = rows.reduce((acc, row) => {
+        if (!row.campaign_name) return acc;
+        if (!matchesChannel(row.channel, filters.channel)) return acc;
+        const month = String(row.order_date).slice(0, 7);
+        const campaign = row.campaign_name || 'Kampanyasiz';
+        const key = `${month}::${campaign}`;
+        acc[key] ||= { month, campaign_name: campaign, revenue: 0, orders: 0, items_sold: 0 };
+        acc[key].revenue += Number(row.order_revenue || 0);
+        acc[key].orders += 1;
+        acc[key].items_sold += Number(row.product_count || 0);
+        return acc;
+    }, {});
+
+    return applyAdvancedFilters(Object.values(grouped).map((row) => ({
+        ...row,
+        revenue: round(row.revenue),
+        aov: round(row.orders > 0 ? row.revenue / row.orders : 0)
+    })), filters).sort((a, b) => b.month.localeCompare(a.month) || b.revenue - a.revenue);
 };
 
 const getProductPerformance = async (filters) => {
@@ -504,6 +676,9 @@ module.exports = {
     getChannelPerformance,
     getPlatformPerformance,
     getCampaignPerformance,
+    getCampaignProductPerformance,
+    getMonthlyBrandSales,
+    getMonthlyCampaignSales,
     getProductPerformance,
     getAttributionAnalysis,
     getFunnelPerformance,

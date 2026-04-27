@@ -10,7 +10,7 @@ const TrafficData = require('../models/TrafficData');
 const FunnelData = require('../models/FunnelData');
 const KpiCache = require('../models/KpiCache');
 const AuditLog = require('../models/AuditLog');
-const { getSourceFields, getRequiredFields, suggestMapping } = require('../services/importMapping.service');
+const { detectSourceType, getSourceFields, getRequiredFields, suggestMapping } = require('../services/importMapping.service');
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/response');
 
 const getFileType = (filename) => {
@@ -152,13 +152,25 @@ const normalizeImportedRecord = (record, sourceType, row) => {
         normalized.reach = toInteger(normalized.reach) ?? normalized.impressions ?? 0;
         normalized.conversions = toInteger(normalized.conversions) ?? 0;
         normalized.conversion_value = toNumber(normalized.conversion_value) ?? 0;
+        normalized.campaign_name = normalized.campaign_name || '';
         
         const originalCurrency = String(normalized.currency || 'TRY').toUpperCase().trim();
 
         if (sourceType === 'google_ads') {
-            normalized.spend = (toNumber(normalized.spend) ?? 0) / 1000000;
-            normalized.cpc = (toNumber(normalized.cpc) ?? 0) / 1000000;
-            normalized.ctr = normalizeTrafficPercentage(normalized.ctr) ?? 0;
+            const spendValue = toNumber(normalized.spend) ?? 0;
+            const cpcValue = toNumber(normalized.cpc) ?? 0;
+            const usesMicros = Object.prototype.hasOwnProperty.call(row, 'metrics.cost_micros')
+                || Object.prototype.hasOwnProperty.call(row, 'metrics.average_cpc');
+
+            normalized.spend = usesMicros ? spendValue / 1000000 : spendValue;
+            normalized.cpc = usesMicros ? cpcValue / 1000000 : cpcValue;
+            // Google Ads CTR: API'den oran (0.05), CSV'den yüzde (5.0) veya "%" işaretli ("5.0%") gelebilir
+            let rawCtr = String(normalized.ctr || '0').replace(/%/g, '').trim();
+            let parsedCtr = toNumber(rawCtr) ?? 0;
+            // Oran formatındaysa (<=1 ve sıfır değilse) yüzdeye çevir
+            if (parsedCtr > 0 && parsedCtr <= 1) parsedCtr = Number((parsedCtr * 100).toFixed(4));
+            // DECIMAL(10,4) taşmasını önle — max 999999.9999 olabilir ama CTR'de >100 anlamsız
+            normalized.ctr = Math.min(parsedCtr, 100);
         } else {
             normalized.spend = toNumber(normalized.spend) ?? 0;
             normalized.cpc = toNumber(normalized.cpc) ?? 0;
@@ -251,6 +263,42 @@ const parseImportFile = async (importLog) => {
     return [];
 };
 
+const parseHeadersFromUpload = async (fileName, fileType) => {
+    const filePath = path.join(__dirname, '../../uploads', fileName);
+
+    if (!fs.existsSync(filePath)) {
+        throw new Error('FILE_NOT_FOUND');
+    }
+
+    if (fileType === 'csv') {
+        return new Promise((resolve, reject) => {
+            const stream = fs.createReadStream(filePath).pipe(csv());
+
+            stream
+                .on('headers', (headers) => {
+                    stream.destroy();
+                    resolve(headers || []);
+                })
+                .on('error', reject);
+        });
+    }
+
+    if (fileType === 'xlsx') {
+        const workbook = xlsx.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: null });
+        return Object.keys(rows[0] || {});
+    }
+
+    if (fileType === 'json') {
+        const json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        const firstRow = Array.isArray(json) ? json[0] : json;
+        return Object.keys(firstRow || {});
+    }
+
+    return [];
+};
+
 const buildNormalizedRecords = (rows, importLog) => {
     const mapping = Object.keys(importLog.mapping_config || {}).length > 0
         ? importLog.mapping_config
@@ -324,7 +372,7 @@ const validateNormalizedRecord = (sourceType, record) => {
 
     if (sourceType === 'meta_ads' || sourceType === 'google_ads') {
         if (!record.date) details.push({ field: 'date', message: 'Gecersiz tarih.' });
-        if (record.impressions < record.clicks) details.push({ field: 'clicks', message: 'Tiklama, gosterimden buyuk olamaz.' });
+        // impressions < clicks kontrolü: bazı kampanya raporlarında edge-case olabilir, sadece spend kontrolü yap
         if (record.spend < 0) details.push({ field: 'spend', message: 'Negatif harcama kabul edilmez.' });
     }
 
@@ -503,11 +551,15 @@ const uploadFile = async (req, res) => {
         }
 
         const fileType = getFileType(req.file.originalname);
+        const headers = await parseHeadersFromUpload(req.file.filename, fileType);
+        const detectedSourceType = detectSourceType(headers);
+        const sourceType = detectedSourceType || req.body.source_type || 'sales';
+
         const importLog = await ImportLog.create({
             user_id: req.user.id,
             file_name: req.file.filename,
             file_type: fileType,
-            source_type: req.body.source_type || 'sales',
+            source_type: sourceType,
             row_count: 0,
             status: 'pending',
             error_detail: [],
@@ -520,6 +572,7 @@ const uploadFile = async (req, res) => {
             id: importLog.id,
             file_name: importLog.file_name,
             file_type: importLog.file_type,
+            source_type: importLog.source_type,
             status: importLog.status,
             message: 'Dosya basariyla yuklendi.'
         });
@@ -542,6 +595,7 @@ const getPreview = async (req, res) => {
         return successResponse(res, {
             id: importLog.id,
             file_name: importLog.file_name,
+            source_type: importLog.source_type,
             preview: previewData,
             suggested_mapping: suggestMapping(importLog.source_type, headers),
             target_fields: getSourceFields(importLog.source_type)

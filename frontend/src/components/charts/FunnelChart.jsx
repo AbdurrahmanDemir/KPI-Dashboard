@@ -1,19 +1,29 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
 export default function FunnelChart({ data = [], isLoading }) {
+    const containerStyle = { background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' };
+
     if (isLoading) {
         return (
-            <div style={{ height: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', background: 'var(--color-bg-secondary)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-                Grafik Yükleniyor...
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-primary)' }}>
+                    Satın Alma Hunisi (Funnel)
+                </h3>
+                <LoadingState message="Funnel grafik yukleniyor..." height={320} />
             </div>
         );
     }
 
     if (!data || !data.length) {
         return (
-            <div style={{ height: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', background: 'var(--color-bg-secondary)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-                Mevcut filtrede funnel verisi bulunamadı.
+            <div style={containerStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-primary)' }}>
+                    Satın Alma Hunisi (Funnel)
+                </h3>
+                <EmptyState message="Mevcut filtrede funnel verisi bulunamadi." height={320} />
             </div>
         );
     }
@@ -82,7 +92,7 @@ export default function FunnelChart({ data = [], isLoading }) {
     const series = [{ name: 'Oturum Sayısı', data: values }];
 
     return (
-        <div style={{ background: 'var(--color-bg-secondary)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+        <div style={containerStyle}>
             <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-primary)' }}>
                 Satın Alma Hunisi (Funnel)
             </h3>

@@ -198,15 +198,15 @@ const FIELD_ALIASES = {
     google_ads: {
         date: ['date', 'segments.date'],
         campaign_name: ['campaign_name', 'campaign.name'],
-        platform_id: ['platform_id', 'campaign.id', 'customer.id'],
+        platform_id: ['platform_id', 'campaign_id', 'campaign.id', 'customer.id'],
         ad_group: ['ad_group', 'ad_group.name'],
         ad_name: ['ad_name', 'segments.product_title', 'ad_group_criterion.keyword.text'],
         impressions: ['impressions', 'metrics.impressions'],
         clicks: ['clicks', 'metrics.clicks'],
         reach: ['reach'],
-        spend: ['spend', 'metrics.cost_micros'],
+        spend: ['spend', 'cost', 'metrics.cost_micros'],
         ctr: ['ctr', 'metrics.ctr'],
-        cpc: ['cpc', 'metrics.average_cpc'],
+        cpc: ['cpc', 'avg_cpc', 'metrics.average_cpc'],
         conversions: ['conversions', 'metrics.conversions'],
         conversion_value: ['conversion_value', 'metrics.conversions_value'],
         currency: ['currency']
@@ -264,7 +264,37 @@ const suggestMapping = (sourceType, headers = []) => {
     return mapping;
 };
 
+const detectSourceType = (headers = []) => {
+    const candidates = Object.keys(SOURCE_FIELDS);
+    const normalizedHeaders = headers.map(normalizeKey);
+
+    let bestMatch = { sourceType: null, score: -1, requiredMatches: -1, mappedCount: 0 };
+
+    for (const sourceType of candidates) {
+        const mapping = suggestMapping(sourceType, headers);
+        const mappedTargets = new Set(Object.values(mapping).filter(Boolean));
+        const requiredMatches = getRequiredFields(sourceType).filter((field) => mappedTargets.has(field)).length;
+        const mappedCount = mappedTargets.size;
+        const score = (requiredMatches * 100) + mappedCount;
+
+        if (
+            score > bestMatch.score ||
+            (score === bestMatch.score && requiredMatches > bestMatch.requiredMatches) ||
+            (score === bestMatch.score && requiredMatches === bestMatch.requiredMatches && mappedCount > bestMatch.mappedCount)
+        ) {
+            bestMatch = { sourceType, score, requiredMatches, mappedCount };
+        }
+    }
+
+    if (bestMatch.requiredMatches <= 0 && normalizedHeaders.length > 0) {
+        return null;
+    }
+
+    return bestMatch.sourceType;
+};
+
 module.exports = {
+    detectSourceType,
     getSourceFields,
     getRequiredFields,
     suggestMapping

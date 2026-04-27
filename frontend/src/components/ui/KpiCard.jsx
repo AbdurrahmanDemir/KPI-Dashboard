@@ -1,10 +1,21 @@
 import React from 'react';
-import { IconArrowUpLeft, IconArrowDownRight } from '@tabler/icons-react';
+import { IconArrowUpLeft, IconArrowDownRight, IconInfoCircle } from '@tabler/icons-react';
+import { getMetricDefinitionByTitle } from '../../utils/metricDefinitions';
 
-export default function KpiCard({ title, value, prefix = '', suffix = '', change, isLoading, subtitle }) {
+export default function KpiCard({
+    title,
+    value,
+    prefix = '',
+    suffix = '',
+    change,
+    comparisonLabel = 'onceki donem',
+    isLoading,
+    subtitle
+}) {
     const formattedValue = typeof value === 'number' 
         ? new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(value) 
         : value;
+    const metricInfo = getMetricDefinitionByTitle(title);
 
     const isPositive = change > 0;
     const isNegative = change < 0;
@@ -30,7 +41,17 @@ export default function KpiCard({ title, value, prefix = '', suffix = '', change
             flexDirection: 'column',
             justifyContent: 'space-between'
         }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-secondary)', margin: 0 }}>{title}</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-secondary)', margin: 0 }}>{title}</h3>
+                {metricInfo && (
+                    <span
+                        title={`${metricInfo.definition}\n${metricInfo.formula}`}
+                        style={{ display: 'inline-flex', color: 'var(--color-text-muted)', cursor: 'help' }}
+                    >
+                        <IconInfoCircle size={16} stroke={1.6} />
+                    </span>
+                )}
+            </div>
             
             <div style={{ marginTop: '16px' }}>
                 {isLoading ? (
@@ -62,9 +83,9 @@ export default function KpiCard({ title, value, prefix = '', suffix = '', change
                         </div>
                     )}
                     <span style={{ fontSize: '13px', fontWeight: 600, color: isPositive || isNegative ? changeColor : 'var(--color-text-muted)' }}>
-                        {isPositive ? '+' : ''}{change}%
+                        {change === null ? 'karsilastirma yok' : `${isPositive ? '+' : ''}${change}%`}
                     </span>
-                    <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>önceki yıl</span>
+                    <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>{comparisonLabel}</span>
                 </div>
             )}
         </div>
