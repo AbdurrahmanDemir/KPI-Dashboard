@@ -1,104 +1,104 @@
-const METRIC_DEFINITIONS = [
+﻿const METRIC_DEFINITIONS = [
     {
         key: 'users',
-        matcher: /kullanici|aktif kullanici|tekil kullanici/i,
-        definition: 'Belirtilen donemde en az bir etkilesimli oturumu olan kullanicilar.',
+        matcher: /kullanıcı|aktif kullanıcı|tekil kullanıcı|kullanici|aktif kullanici|tekil kullanici/i,
+        definition: 'Belirtilen dönemde en az bir etkileşimli oturumu olan kullanıcılar.',
         formula: 'Users'
     },
     {
         key: 'new_users',
-        matcher: /yeni kullanici/i,
-        definition: 'Donem icinde ilk kez gelen kullanici sayisi.',
+        matcher: /yeni kullanıcı|yeni kullanici/i,
+        definition: 'Dönem içinde ilk kez gelen kullanıcı sayısı.',
         formula: 'New Users'
     },
     {
         key: 'sessions',
         matcher: /oturum|session|ziyaretci/i,
-        definition: 'Kullanicilarin baslattigi toplam oturum sayisi.',
+        definition: 'Kullanıcıların başlattığı toplam oturum sayısı.',
         formula: 'Sessions'
     },
     {
         key: 'engagement_rate',
-        matcher: /etkilesim orani/i,
-        definition: 'Etkilesimli oturumlarin toplam oturumlara orani.',
+        matcher: /etkileşim oranı|etkilesim orani/i,
+        definition: 'Etkileşimli oturumların toplam oturumlara oranı.',
         formula: 'Engagement Rate = 100 - Bounce Rate'
     },
     {
         key: 'bounce_rate',
-        matcher: /hemen cikma|bounce/i,
-        definition: 'Etkilesimsiz oturumlarin toplam oturumlara orani.',
+        matcher: /hemen çıkma|hemen cikma|bounce/i,
+        definition: 'Etkileşimsiz oturumların toplam oturumlara oranı.',
         formula: 'Bounce Rate = 100 - Engagement Rate'
     },
     {
         key: 'cvr',
-        matcher: /cvr|donusum orani|trafik donusum/i,
-        definition: 'Oturumdan donusume gecis orani.',
+        matcher: /cvr|dönüşüm oranı|trafik dönüşüm|donusum orani|trafik donusum/i,
+        definition: 'Oturumdan dönüşüme geçiş oranı.',
         formula: 'CVR = Conversions / Sessions * 100'
     },
     {
         key: 'conversions',
-        matcher: /donusum/i,
-        definition: 'Hedeflenen aksiyonlarin toplami.',
+        matcher: /dönüşüm|donusum/i,
+        definition: 'Hedeflenen aksiyonların toplamı.',
         formula: 'Conversions'
     },
     {
         key: 'revenue',
         matcher: /gelir|ciro|revenue/i,
-        definition: 'Siparislerden elde edilen toplam gelir.',
+        definition: 'Siparişlerden elde edilen toplam gelir.',
         formula: 'Revenue = Sum(order_revenue)'
     },
     {
         key: 'orders',
-        matcher: /siparis/i,
-        definition: 'Tamamlanan siparis adedi.',
+        matcher: /sipariş|siparis/i,
+        definition: 'Tamamlanan sipariş adedi.',
         formula: 'Orders'
     },
     {
         key: 'aov',
-        matcher: /aov|sepet ortalamasi/i,
-        definition: 'Ortalama siparis tutari.',
+        matcher: /aov|sepet ortalaması|sepet ortalamasi/i,
+        definition: 'Ortalama sipariş tutarı.',
         formula: 'AOV = Revenue / Orders'
     },
     {
         key: 'roas',
         matcher: /roas/i,
-        definition: 'Reklam harcamasi basina elde edilen gelir.',
+        definition: 'Reklam harcaması başına elde edilen gelir.',
         formula: 'ROAS = Revenue / Ad Spend'
     },
     {
         key: 'ctr',
         matcher: /ctr/i,
-        definition: 'Tiklamalarin gosterimlere orani.',
+        definition: 'Tıklamaların gösterimlere oranı.',
         formula: 'CTR = Clicks / Impressions * 100'
     },
     {
         key: 'cpc',
-        matcher: /cpc|tiklama maliyeti/i,
-        definition: 'Bir tiklama basina ortalama maliyet.',
+        matcher: /cpc|tıklama maliyeti|tiklama maliyeti/i,
+        definition: 'Bir tıklama başına ortalama maliyet.',
         formula: 'CPC = Spend / Clicks'
     },
     {
         key: 'spend',
         matcher: /harcama|spend/i,
-        definition: 'Secili donemdeki toplam reklam harcamasi.',
+        definition: 'Seçili dönemdeki toplam reklam harcaması.',
         formula: 'Spend = Sum(ad_spend)'
     },
     {
         key: 'refund_rate',
         matcher: /iade orani/i,
-        definition: 'Iade tutarinin toplam gelire orani.',
+        definition: 'İade tutarının toplam gelire oranı.',
         formula: 'Refund Rate = Refund Amount / Revenue * 100'
     },
     {
         key: 'refund_amount',
-        matcher: /iade tutari|refund/i,
-        definition: 'Toplam iade tutari.',
+        matcher: /iade tutarı|iade tutari|refund/i,
+        definition: 'Toplam iade tutarı.',
         formula: 'Refund Amount'
     },
     {
         key: 'retention',
         matcher: /retention|cohort/i,
-        definition: 'Kullanicilarin ilerleyen donemlerde geri donme orani.',
+        definition: 'Kullanıcıların ilerleyen dönemlerde geri dönme oranı.',
         formula: 'Retention = Returning Cohort / Initial Cohort * 100'
     }
 ];
@@ -108,3 +108,4 @@ export function getMetricDefinitionByTitle(title = '') {
 }
 
 export default METRIC_DEFINITIONS;
+

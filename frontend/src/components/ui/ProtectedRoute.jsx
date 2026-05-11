@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import MainLayout from '../layout/MainLayout';
@@ -39,3 +39,4 @@ export default function ProtectedRoute({ children, requiredRole = null, allowedR
 
     return <MainLayout>{children}</MainLayout>;
 }
+

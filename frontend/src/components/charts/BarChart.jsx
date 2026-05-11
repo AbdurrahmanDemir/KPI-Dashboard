@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Chart from 'react-apexcharts';
 import EmptyState from '../ui/EmptyState';
 import LoadingState from '../ui/LoadingState';
@@ -10,7 +10,7 @@ export default function BarChart({ data = [], isLoading, onBarClick, title = 'Ka
         return (
             <div style={containerStyle}>
                 <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
-                <LoadingState message="Bar grafik yukleniyor..." height={250} />
+                <LoadingState message="Bar grafik yükleniyor..." height={250} />
             </div>
         );
     }
@@ -19,7 +19,7 @@ export default function BarChart({ data = [], isLoading, onBarClick, title = 'Ka
         return (
             <div style={containerStyle}>
                 <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
-                <EmptyState message="Gosterilecek kanal verisi bulunamadi." height={250} />
+                <EmptyState message="Gösterilecek kanal verisi bulunamadı." height={250} />
             </div>
         );
     }
@@ -89,7 +89,7 @@ export default function BarChart({ data = [], isLoading, onBarClick, title = 'Ka
                 <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>{title}</h3>
                 {onBarClick && (
                     <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                        💡 Kanal seçmek için tıklayın
+                        Kanal seçmek için tıklayın
                     </span>
                 )}
             </div>
@@ -97,3 +97,4 @@ export default function BarChart({ data = [], isLoading, onBarClick, title = 'Ka
         </div>
     );
 }
+

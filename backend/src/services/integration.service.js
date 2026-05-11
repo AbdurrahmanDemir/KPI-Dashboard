@@ -1,8 +1,14 @@
 const axios = require('axios');
 const { GoogleAdsApi } = require('google-ads-api');
-const { AdsData, CampaignData } = require('../models');
+const { AdsData, CampaignData, KpiCache, sequelize } = require('../models');
 
 class IntegrationService {
+    getDataPlatform(platform) {
+        if (platform === 'meta_ads') return 'meta';
+        if (platform === 'google_ads') return 'google_ads';
+        return null;
+    }
+
     async syncMetaAds(integration, isTestMode = false) {
         try {
             let data = [];
@@ -219,6 +225,48 @@ class IntegrationService {
             return { success: true, count: adsToInsert.length };
         } catch (error) {
             console.error('Google Ads Sync Error:', error.message);
+            throw error;
+        }
+    }
+
+    async clearPlatformData(platform) {
+        const dataPlatform = this.getDataPlatform(platform);
+
+        if (!dataPlatform) {
+            throw new Error('Desteklenmeyen platform');
+        }
+
+        const transaction = await sequelize.transaction();
+
+        try {
+            const adsDeleted = await AdsData.destroy({
+                where: {
+                    platform: dataPlatform,
+                    import_id: null,
+                },
+                transaction,
+            });
+
+            const campaignsDeleted = await CampaignData.destroy({
+                where: { platform: dataPlatform },
+                transaction,
+            });
+
+            const cacheDeleted = await KpiCache.destroy({
+                where: {},
+                transaction,
+            });
+
+            await transaction.commit();
+
+            return {
+                success: true,
+                adsDeleted,
+                campaignsDeleted,
+                cacheDeleted,
+            };
+        } catch (error) {
+            await transaction.rollback();
             throw error;
         }
     }

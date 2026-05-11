@@ -10,6 +10,7 @@ const {
     getMonthlyBrandSales,
     getMonthlyCampaignSales,
     getProductPerformance,
+    getSalesDimensionPerformance,
     getAttributionAnalysis,
     getFunnelPerformance,
     getCohortPerformance
@@ -28,7 +29,8 @@ const extractFilters = (req) => ({
     min_revenue: req.query.min_revenue,
     max_revenue: req.query.max_revenue,
     min_roas: req.query.min_roas,
-    min_orders: req.query.min_orders
+    min_orders: req.query.min_orders,
+    dimension: req.query.dimension
 });
 
 const handler = (fn, message) => async (req, res) => {
@@ -49,6 +51,7 @@ module.exports = {
     getMonthlyBrandSales: handler(getMonthlyBrandSales, '[DASHBOARD] Monthly Brand Error'),
     getMonthlyCampaignSales: handler(getMonthlyCampaignSales, '[DASHBOARD] Monthly Campaign Error'),
     getProductPerformance: handler(getProductPerformance, '[DASHBOARD] Product Error'),
+    getSalesDimensionPerformance: handler(getSalesDimensionPerformance, '[DASHBOARD] Sales Dimension Error'),
     getAttributionAnalysis: handler(getAttributionAnalysis, '[DASHBOARD] Attribution Error'),
     getFunnel: handler(getFunnelPerformance, '[DASHBOARD] Funnel Error'),
     getCohort: handler(getCohortPerformance, '[DASHBOARD] Cohort Error')

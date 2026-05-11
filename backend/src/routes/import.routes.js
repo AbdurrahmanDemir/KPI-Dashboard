@@ -11,6 +11,7 @@ const {
     mapColumns,
     validateImport,
     getErrors,
+    getPipeline,
     commitImport,
     deleteImport,
     purgeOrphanData
@@ -59,6 +60,7 @@ router.get('/:id/preview', authenticate, requireRoles('admin', 'marketing_manage
 router.post('/:id/map-columns', authenticate, requireRoles('admin', 'marketing_manager'), mapColumns);
 router.post('/:id/validate', authenticate, requireRoles('admin', 'marketing_manager'), validateImport);
 router.get('/:id/errors', authenticate, requireRoles('admin', 'marketing_manager'), getErrors);
+router.get('/:id/pipeline', authenticate, requireRoles('admin', 'marketing_manager'), getPipeline);
 router.post('/:id/commit', authenticate, requireRoles('admin', 'marketing_manager'), commitImport);
 router.delete('/:id', authenticate, requireRoles('admin', 'marketing_manager'), deleteImport);
 

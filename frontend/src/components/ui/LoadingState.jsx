@@ -1,7 +1,7 @@
-import React from 'react';
+﻿import React from 'react';
 
 export default function LoadingState({
-    message = 'Yukleniyor...',
+    message = 'Yükleniyor...',
     height = 220,
     compact = false
 }) {
@@ -24,3 +24,4 @@ export default function LoadingState({
         </div>
     );
 }
+

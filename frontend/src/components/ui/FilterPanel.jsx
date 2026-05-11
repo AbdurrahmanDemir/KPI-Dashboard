@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useFilterStore from '../../store/filterStore';
 import api from '../../services/api';
 import { getActiveFilterCount, getComparisonLabel } from '../../utils/filterComparison';
+import { extractAppliedFilters } from '../../utils/segmentBuilder';
 
 export default function FilterPanel() {
     const { filters, setFilter, setFilters, resetFilters } = useFilterStore();
@@ -64,7 +65,7 @@ export default function FilterPanel() {
         if (!id) return;
         const target = segmentsData.find((segment) => segment.id === id);
         if (target?.rules_config) {
-            setFilters(target.rules_config);
+            setFilters(extractAppliedFilters(target.rules_config));
         }
     };
 
@@ -83,7 +84,7 @@ export default function FilterPanel() {
                     minWidth: '150px'
                 }}
             >
-                <option value="">Tumu</option>
+                <option value="">Tümü</option>
                 {options.map((option) => {
                     const value = typeof option === 'string' ? option : option.value;
                     const labelValue = typeof option === 'string' ? option : optionLabel ? option[optionLabel] : option.label;
@@ -142,18 +143,18 @@ export default function FilterPanel() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '240px' }}>
-                <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontWeight: 500 }}>Donem Karsilastirma</label>
+                <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontWeight: 500 }}>Dönem Karşılaştırma</label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--color-border)', background: 'var(--color-bg-primary)', cursor: 'pointer' }}>
                     <input
                         type="checkbox"
                         checked={Boolean(filters.compare_previous_period)}
                         onChange={(e) => handleComparisonToggle(e.target.checked)}
                     />
-                    <span style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>Onceki donem ile karsilastir</span>
+                    <span style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>Önceki dönem ile karşılaştır</span>
                 </label>
                 {filters.compare_previous_period && (
                     <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                        Karsilastirma araligi: {comparisonLabel || 'Tarih secimi gerekli'}
+                        Karşılaştırma aralığı: {comparisonLabel || 'Tarih seçimi gerekli'}
                     </span>
                 )}
             </div>
@@ -171,7 +172,7 @@ export default function FilterPanel() {
                 <label style={{ fontSize: '13px', color: 'transparent' }}>-</label>
                 <button onClick={() => setShowAdvancedFilters((prev) => !prev)}
                     style={{ padding: '8px 12px', borderRadius: '6px', border: '1px dashed var(--color-text-muted)', background: 'transparent', color: 'var(--color-text-primary)', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
-                    {showAdvancedFilters ? '▲ Gelismis Filtreleri Gizle' : '🛠 Gelismis Filtreler'}
+                    {showAdvancedFilters ? '▲ Gelişmiş Filtreleri Gizle' : 'Gelişmiş Filtreler'}
                 </button>
             </div>
 
@@ -242,3 +243,4 @@ export default function FilterPanel() {
         </div>
     );
 }
+

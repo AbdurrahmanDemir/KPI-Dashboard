@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Chart from 'react-apexcharts';
 import EmptyState from '../ui/EmptyState';
 import LoadingState from '../ui/LoadingState';
@@ -115,3 +115,4 @@ export default function CohortHeatmap({ data = [], isLoading }) {
         </div>
     );
 }
+

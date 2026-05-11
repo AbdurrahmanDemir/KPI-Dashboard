@@ -1,5 +1,6 @@
 const Segment = require('../models/Segment');
 const { successResponse, errorResponse } = require('../utils/response');
+const { extractAppliedFilters, getSegmentPreviewCount, normalizeSegmentConfig } = require('../utils/segmentRuleUtils');
 
 // ─── GET /segments ─────────────────────────────────────────────────────────────
 const getSegments = async (req, res) => {
@@ -62,7 +63,14 @@ const previewSegment = async (req, res) => {
     try {
         const segment = await Segment.findOne({ where: { id: req.params.id, user_id: req.user.id } });
         if (!segment) return errorResponse(res, 404, 'NOT_FOUND', 'Segment bulunamadi.');
-        return successResponse(res, { rules_config: segment.rules_config, preview_count: 0 });
+        const normalized = normalizeSegmentConfig(segment);
+        const previewCount = await getSegmentPreviewCount(segment);
+        return successResponse(res, {
+            rules_config: segment.rules_config,
+            normalized_rules_config: normalized,
+            preview_count: previewCount,
+            applied_filters: extractAppliedFilters(segment.rules_config),
+        });
     } catch (err) {
         return errorResponse(res, 500, 'INTERNAL_ERROR', 'Segment onizlemesi alinamadi.');
     }
@@ -72,7 +80,11 @@ const applySegment = async (req, res) => {
     try {
         const segment = await Segment.findOne({ where: { id: req.params.id, user_id: req.user.id } });
         if (!segment) return errorResponse(res, 404, 'NOT_FOUND', 'Segment bulunamadi.');
-        return successResponse(res, { applied: true, filters: segment.rules_config });
+        return successResponse(res, {
+            applied: true,
+            filters: extractAppliedFilters(segment.rules_config),
+            normalized_rules_config: normalizeSegmentConfig(segment),
+        });
     } catch (err) {
         return errorResponse(res, 500, 'INTERNAL_ERROR', 'Segment uygulanamadi.');
     }

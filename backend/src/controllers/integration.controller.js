@@ -90,3 +90,22 @@ exports.syncIntegration = async (req, res) => {
         res.status(500).json({ success: false, message: error.message || 'Senkronizasyon hatası' });
     }
 };
+
+exports.clearIntegrationData = async (req, res) => {
+    try {
+        const { platform } = req.params;
+        const result = await integrationService.clearPlatformData(platform);
+
+        res.json({
+            success: true,
+            message: `${platform} icin entegrasyon verileri temizlendi.`,
+            data: result
+        });
+    } catch (error) {
+        console.error('clearIntegrationData error:', error);
+        res.status(error.message === 'Desteklenmeyen platform' ? 400 : 500).json({
+            success: false,
+            message: error.message || 'Temizleme sirasinda hata olustu.'
+        });
+    }
+};

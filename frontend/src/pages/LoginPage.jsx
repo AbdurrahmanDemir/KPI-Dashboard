@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 
@@ -116,7 +116,7 @@ export default function LoginPage() {
                                 style={styles.eyeBtn}
                                 aria-label={showPass ? 'Şifreyi gizle' : 'Şifreyi göster'}
                             >
-                                {showPass ? '🙈' : '👁️'}
+                                {showPass ? 'Gizle' : 'Göster'}
                             </button>
                         </div>
                     </div>
@@ -181,7 +181,7 @@ export default function LoginPage() {
     );
 }
 
-// ─── Stiller ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Stiller â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const styles = {
     page: {
         minHeight: '100vh',
@@ -391,3 +391,4 @@ const styles = {
         marginBottom: 0,
     },
 };
+

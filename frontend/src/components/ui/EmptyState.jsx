@@ -1,10 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 
 export default function EmptyState({
-    message = 'Gosterilecek veri bulunamadi.',
+    message = 'Gösterilecek veri bulunamadı.',
     height = 220,
     compact = false,
-    icon = '📭'
+    icon = '∅'
 }) {
     return (
         <div
@@ -25,3 +25,4 @@ export default function EmptyState({
         </div>
     );
 }
+

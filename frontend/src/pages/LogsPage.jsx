@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import DataTable from '../components/ui/DataTable';
@@ -95,3 +95,4 @@ export default function LogsPage() {
         </div>
     );
 }
+

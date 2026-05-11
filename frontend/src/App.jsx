@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+﻿import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import { useEffect } from 'react';
@@ -21,6 +21,9 @@ const LogsPage = lazy(() => import('./pages/LogsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const SegmentsPage = lazy(() => import('./pages/SegmentsPage'));
 const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
+const DataOverviewPage = lazy(() => import('./pages/DataOverviewPage'));
+const SegmentBuilderPage = lazy(() => import('./pages/SegmentBuilderPage'));
+const SegmentDetailPage = lazy(() => import('./pages/SegmentDetailPage'));
 
 const PageLoader = () => (
   <div style={{
@@ -53,10 +56,17 @@ function App() {
           <Route path="/traffic" element={<ProtectedRoute><TrafficAnalysisPage /></ProtectedRoute>} />
           <Route path="/funnel" element={<ProtectedRoute><FunnelAnalysisPage /></ProtectedRoute>} />
           <Route path="/cohort" element={<ProtectedRoute><CohortAnalysisPage /></ProtectedRoute>} />
-          <Route path="/import" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><ImportPage /></ProtectedRoute>} />
+          <Route path="/data" element={<Navigate to="/data/overview" replace />} />
+          <Route path="/data/overview" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><DataOverviewPage /></ProtectedRoute>} />
+          <Route path="/data/import" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><ImportPage /></ProtectedRoute>} />
+          <Route path="/data/integrations" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><IntegrationsPage /></ProtectedRoute>} />
+          <Route path="/import" element={<Navigate to="/data/import" replace />} />
           <Route path="/export" element={<ProtectedRoute><ExportPage /></ProtectedRoute>} />
           <Route path="/segments" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><SegmentsPage /></ProtectedRoute>} />
-          <Route path="/integrations" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><IntegrationsPage /></ProtectedRoute>} />
+          <Route path="/segments/new" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><SegmentBuilderPage /></ProtectedRoute>} />
+          <Route path="/segments/:id" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><SegmentDetailPage /></ProtectedRoute>} />
+          <Route path="/segments/:id/edit" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><SegmentBuilderPage /></ProtectedRoute>} />
+          <Route path="/integrations" element={<Navigate to="/data/integrations" replace />} />
           <Route path="/users" element={<ProtectedRoute requiredRole="admin"><UsersPage /></ProtectedRoute>} />
           <Route path="/logs" element={<ProtectedRoute requiredRole="admin"><LogsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager']}><SettingsPage /></ProtectedRoute>} />
@@ -68,3 +78,4 @@ function App() {
 }
 
 export default App;
+

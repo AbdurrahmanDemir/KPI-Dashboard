@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import useFilterStore from '../store/filterStore';
@@ -13,14 +13,24 @@ import {
     getComparisonLabel
 } from '../utils/filterComparison';
 
+const calculateWeightedRetention = (rows) => {
+    const retainedCustomers = rows.reduce((sum, row) => sum + Number(row.customers || 0), 0);
+    const cohortSize = rows.reduce((sum, row) => {
+        const retentionRate = Number(row.retention_rate || 0);
+        return sum + (retentionRate > 0 ? Number(row.customers || 0) / (retentionRate / 100) : 0);
+    }, 0);
+
+    return cohortSize > 0 ? (retainedCustomers / cohortSize) * 100 : 0;
+};
+
 export default function CohortAnalysisPage() {
     const { filters } = useFilterStore();
     const queryString = buildQueryString(filters);
     const comparisonFilters = buildComparisonFilters(filters);
     const comparisonQueryString = comparisonFilters ? buildQueryString(comparisonFilters) : '';
     const comparisonLabel = filters.compare_previous_period
-        ? `onceki donem (${getComparisonLabel(filters)})`
-        : 'onceki donem';
+        ? `?nceki d?nem (${getComparisonLabel(filters)})`
+        : '?nceki d?nem';
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['cohort-performance', queryString],
@@ -44,7 +54,7 @@ export default function CohortAnalysisPage() {
     // Month 1 retention ortalaması
     const month1Rows = rows.filter(r => r.month_offset === 1);
     const avgMonth1Retention = month1Rows.length > 0
-        ? (month1Rows.reduce((sum, r) => sum + (r.retention_rate || 0), 0) / month1Rows.length).toFixed(1)
+        ? calculateWeightedRetention(month1Rows).toFixed(1)
         : 0;
 
     // En yüksek retention cohort'u
@@ -58,7 +68,7 @@ export default function CohortAnalysisPage() {
 
     const previousMonth1Rows = previousRows.filter((r) => r.month_offset === 1);
     const previousAvgMonth1Retention = previousMonth1Rows.length > 0
-        ? previousMonth1Rows.reduce((sum, r) => sum + (r.retention_rate || 0), 0) / previousMonth1Rows.length
+        ? calculateWeightedRetention(previousMonth1Rows)
         : 0;
 
     const previousBestCohort = previousRows
@@ -71,7 +81,13 @@ export default function CohortAnalysisPage() {
         { key: 'month_offset', label: 'Ay Farkı', sortable: true },
         { key: 'customers', label: 'Müşteri Sayısı', sortable: true, formatter: (v) => v.toLocaleString('tr-TR') },
         { key: 'orders', label: 'Sipariş', sortable: true, formatter: (v) => v.toLocaleString('tr-TR') },
-        { key: 'retention_rate', label: 'Retention (%)', sortable: true, formatter: (v) => `%${Number(v).toFixed(1)}` }
+        {
+            key: 'retention_rate',
+            label: 'Retention (%)',
+            sortable: true,
+            formatter: (v) => `%${Number(v).toFixed(1)}`,
+            aggregate: (groupRows) => calculateWeightedRetention(groupRows)
+        }
     ];
 
     if (error) {
@@ -145,3 +161,4 @@ export default function CohortAnalysisPage() {
         </div>
     );
 }
+

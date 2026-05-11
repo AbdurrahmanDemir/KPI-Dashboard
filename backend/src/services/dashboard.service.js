@@ -1,8 +1,9 @@
-const { Op } = require('sequelize');
+﻿const { Op } = require('sequelize');
 const FunnelData = require('../models/FunnelData');
 const TrafficData = require('../models/TrafficData');
 const AdsData = require('../models/AdsData');
 const SalesData = require('../models/SalesData');
+const { buildAttributionInsight } = require('./insight.service');
 
 const round = (value, digits = 2) => Number(Number(value || 0).toFixed(digits));
 const KNOWN_BRANDS = [
@@ -58,8 +59,9 @@ const normalizeChannel = (value) => {
     if (raw.includes('google_ads') || raw.includes('adwords') || raw.includes('paid search') || raw === 'google') return 'google_ads';
     if (raw.includes('organic')) return 'organic';
     if (raw.includes('direct') || raw === '(direct)') return 'direct';
-    if (raw.includes('email')) return 'email';
+    if (raw.includes('email') || raw.includes('crm') || raw.includes('newsletter')) return 'email';
     if (raw.includes('tiktok')) return 'tiktok';
+    if (raw.includes('referral')) return 'referral';
     return raw.replace(/\s+/g, '_');
 };
 
@@ -76,6 +78,7 @@ const labelForChannel = (channel) => {
         direct: 'Direct',
         email: 'Email',
         tiktok: 'TikTok',
+        referral: 'Referral',
         other: 'Other'
     };
     return labels[channel] || channel;
@@ -160,6 +163,9 @@ const getCampaignPerformance = async (filters) => {
                 ...buildDateWhere(filters, 'order_date'),
                 ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {}),
                 ...(filters.product_name ? { product_name: filters.product_name } : {}),
+                ...(filters.city ? { city: filters.city } : {}),
+                ...(filters.device ? { device: filters.device } : {}),
+                ...(filters.country ? { country: filters.country } : {}),
                 order_status: 'completed'
             },
             attributes: ['campaign_name', 'channel', 'order_revenue'],
@@ -168,7 +174,9 @@ const getCampaignPerformance = async (filters) => {
         TrafficData.findAll({
             where: {
                 ...buildDateWhere(filters),
-                ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {})
+                ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {}),
+                ...(filters.city ? { city: filters.city } : {}),
+                ...(filters.device ? { device: filters.device } : {})
             },
             attributes: ['campaign_name', 'channel', 'sessions', 'conversions'],
             raw: true
@@ -287,7 +295,7 @@ const getCampaignProductPerformance = async (filters) => {
 
     const spendByCampaign = adRows.reduce((acc, row) => {
         if (!matchesChannel(row.platform, filters.channel)) return acc;
-        const campaign = row.campaign_name || 'Kampanyasiz';
+        const campaign = row.campaign_name || 'Kampanyasız';
         acc[campaign] ||= { spend: 0, clicks: 0, impressions: 0, platform_conversions: 0, platform_revenue: 0, platform: labelForChannel(row.platform) };
         acc[campaign].spend += Number(row.spend || 0);
         acc[campaign].clicks += Number(row.clicks || 0);
@@ -301,8 +309,8 @@ const getCampaignProductPerformance = async (filters) => {
     const grouped = salesRows.reduce((acc, row) => {
         if (!row.campaign_name) return acc;
         if (!matchesChannel(row.channel, filters.channel)) return acc;
-        const campaign = row.campaign_name || 'Kampanyasiz';
-        const product = row.product_name || 'Tanimsiz urun';
+        const campaign = row.campaign_name || 'Kampanyasız';
+        const product = row.product_name || 'Tanımsız ürün';
         const key = `${campaign}::${product}`;
         const revenue = Number(row.order_revenue || 0);
         totalRevenueByCampaign[campaign] = (totalRevenueByCampaign[campaign] || 0) + revenue;
@@ -331,7 +339,7 @@ const getCampaignProductPerformance = async (filters) => {
             analytics_revenue: round(row.analytics_revenue),
             estimated_spend: round(allocatedSpend),
             estimated_roas: round(allocatedSpend > 0 ? row.analytics_revenue / allocatedSpend : 0),
-            spend_allocation_method: 'Kampanya harcamasi urun ciro payina gore dagitildi'
+            spend_allocation_method: 'Kampanya harcamas? ?r?n ciro pay?na g?re da??t?ld?'
         };
     }), filters).sort((a, b) => b.analytics_revenue - a.analytics_revenue);
 };
@@ -389,7 +397,7 @@ const getMonthlyCampaignSales = async (filters) => {
         if (!row.campaign_name) return acc;
         if (!matchesChannel(row.channel, filters.channel)) return acc;
         const month = String(row.order_date).slice(0, 7);
-        const campaign = row.campaign_name || 'Kampanyasiz';
+        const campaign = row.campaign_name || 'Kampanyasız';
         const key = `${month}::${campaign}`;
         acc[key] ||= { month, campaign_name: campaign, revenue: 0, orders: 0, items_sold: 0 };
         acc[key].revenue += Number(row.order_revenue || 0);
@@ -422,9 +430,9 @@ const getProductPerformance = async (filters) => {
 
     const grouped = rows.reduce((acc, row) => {
         if (!matchesChannel(row.channel, filters.channel)) return acc;
-        const key = row.product_name || row.product_category || 'Tanimsiz urun';
+        const key = row.product_name || row.product_category || 'Tanımsız ürün';
         acc[key] ||= {
-            product_name: row.product_name || 'Tanimsiz urun',
+            product_name: row.product_name || 'Tanımsız ürün',
             product_category: row.product_category || 'Kategorisiz',
             revenue: 0,
             items_sold: 0,
@@ -445,12 +453,100 @@ const getProductPerformance = async (filters) => {
         .sort((a, b) => b.revenue - a.revenue);
 };
 
+const getSalesDimensionPerformance = async (filters) => {
+    const allowedDimensions = {
+        product: { field: 'product_name', fallback: 'Tanımsız ürün', label: 'Ürün' },
+        city: { field: 'city', fallback: 'Bilinmiyor', label: 'Şehir' },
+        device: { field: 'device', fallback: 'Bilinmiyor', label: 'Cihaz' },
+        payment_method: { field: 'payment_method', fallback: 'Bilinmiyor', label: 'Ödeme Yöntemi' }
+    };
+    const config = allowedDimensions[filters.dimension] || allowedDimensions.product;
+
+    const rows = await SalesData.findAll({
+        where: {
+            ...buildDateWhere(filters, 'order_date'),
+            ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {}),
+            ...(filters.product_name ? { product_name: filters.product_name } : {}),
+            ...(filters.city ? { city: filters.city } : {}),
+            ...(filters.device ? { device: filters.device } : {}),
+            ...(filters.country ? { country: filters.country } : {})
+        },
+        attributes: [
+            config.field,
+            'channel',
+            'order_status',
+            'customer_id',
+            'product_count',
+            'order_revenue',
+            'discount_amount',
+            'refund_amount'
+        ],
+        raw: true
+    });
+
+    const grouped = rows.reduce((acc, row) => {
+        if (!matchesChannel(row.channel, filters.channel)) return acc;
+        const key = row[config.field] || config.fallback;
+        acc[key] ||= {
+            dimension: filters.dimension || 'product',
+            dimension_label: config.label,
+            name: key,
+            orders: 0,
+            revenue: 0,
+            items_sold: 0,
+            discount_amount: 0,
+            refund_amount: 0,
+            total_revenue: 0,
+            customers: new Set()
+        };
+
+        if (row.order_status === 'completed') {
+            acc[key].orders += 1;
+            acc[key].revenue += Number(row.order_revenue || 0);
+            acc[key].items_sold += Number(row.product_count || 0);
+            acc[key].discount_amount += Number(row.discount_amount || 0);
+            if (row.customer_id) acc[key].customers.add(row.customer_id);
+        }
+
+        if (row.order_status !== 'cancelled') {
+            acc[key].total_revenue += Number(row.order_revenue || 0);
+        }
+
+        if (row.order_status === 'refunded') {
+            acc[key].refund_amount += Number(row.refund_amount || 0);
+        }
+
+        return acc;
+    }, {});
+
+    return applyAdvancedFilters(Object.values(grouped).map((row) => {
+        const uniqueCustomers = row.customers.size;
+        return {
+            dimension: row.dimension,
+            dimension_label: row.dimension_label,
+            name: row.name,
+            orders: row.orders,
+            revenue: round(row.revenue),
+            items_sold: row.items_sold,
+            discount_amount: round(row.discount_amount),
+            refund_amount: round(row.refund_amount),
+            aov: round(row.orders > 0 ? row.revenue / row.orders : 0),
+            items_per_order: round(row.orders > 0 ? row.items_sold / row.orders : 0),
+            revenue_per_customer: round(uniqueCustomers > 0 ? row.revenue / uniqueCustomers : 0),
+            refund_rate: round(row.total_revenue > 0 ? (row.refund_amount / row.total_revenue) * 100 : 0),
+            unique_customers: uniqueCustomers
+        };
+    }), filters).sort((a, b) => b.revenue - a.revenue);
+};
+
 const getAttributionAnalysis = async (filters) => {
     const [trafficRows, adRows, salesRows] = await Promise.all([
         TrafficData.findAll({
             where: {
                 ...buildDateWhere(filters),
-                ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {})
+                ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {}),
+                ...(filters.city ? { city: filters.city } : {}),
+                ...(filters.device ? { device: filters.device } : {})
             },
             attributes: ['channel', 'sessions', 'conversions'],
             raw: true
@@ -469,6 +565,9 @@ const getAttributionAnalysis = async (filters) => {
                 ...buildDateWhere(filters, 'order_date'),
                 ...(filters.campaign_name ? { campaign_name: filters.campaign_name } : {}),
                 ...(filters.product_name ? { product_name: filters.product_name } : {}),
+                ...(filters.city ? { city: filters.city } : {}),
+                ...(filters.device ? { device: filters.device } : {}),
+                ...(filters.country ? { country: filters.country } : {}),
                 order_status: 'completed'
             },
             attributes: ['channel', 'order_revenue'],
@@ -504,27 +603,30 @@ const getAttributionAnalysis = async (filters) => {
     }
 
     const rawRows = Object.values(grouped).map((row) => {
-        const ctr = row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0;
-        const cvr = row.sessions > 0 ? (row.orders / row.sessions) * 100 : 0;
-        const analyticsRoas = row.spend > 0 ? row.analytics_revenue / row.spend : 0;
-        const platformRoas = row.spend > 0 ? row.platform_revenue / row.spend : 0;
-
-        let diagnosis = 'Attribution dengeli';
-        if (ctr < 1.2) diagnosis = 'Ust huni zayif: kreatif veya hedefleme kontrol edilmeli';
-        else if (cvr < 1) diagnosis = 'Alt huni zayif: urun, teklif veya landing page kontrol edilmeli';
-        else if (row.platform_revenue > row.analytics_revenue * 1.25) diagnosis = 'Platform revenue analytics kaynagini asiyor';
+        const insight = buildAttributionInsight({
+            spend: row.spend,
+            impressions: row.impressions,
+            clicks: row.clicks,
+            sessions: row.sessions,
+            analyticsOrders: row.orders,
+            analyticsRevenue: row.analytics_revenue,
+            platformRevenue: row.platform_revenue
+        });
 
         return {
             ...row,
             spend: round(row.spend),
             analytics_revenue: round(row.analytics_revenue),
             platform_revenue: round(row.platform_revenue),
-            analytics_roas: round(analyticsRoas),
-            platform_roas: round(platformRoas),
-            ctr: round(ctr),
-            cvr: round(cvr),
-            attribution_gap: round(row.platform_revenue - row.analytics_revenue),
-            diagnosis
+            analytics_roas: insight.analytics_roas,
+            platform_roas: insight.platform_roas,
+            ctr: insight.ctr,
+            cvr: insight.analytics_cvr,
+            attribution_gap: insight.attribution_gap,
+            diagnosis: insight.diagnosis,
+            insight_code: insight.code,
+            insight_severity: insight.severity,
+            recommended_action: insight.recommended_action
         };
     });
 
@@ -535,7 +637,18 @@ const getAttributionAnalysis = async (filters) => {
             source_of_truth: 'Google Analytics',
             total_analytics_revenue: round(rows.reduce((sum, row) => sum + row.analytics_revenue, 0)),
             total_platform_revenue: round(rows.reduce((sum, row) => sum + row.platform_revenue, 0)),
-            total_gap: round(rows.reduce((sum, row) => sum + row.attribution_gap, 0))
+            total_gap: round(rows.reduce((sum, row) => sum + row.attribution_gap, 0)),
+            analytics_attributed_roas: round(
+                rows.reduce((sum, row) => sum + row.spend, 0) > 0
+                    ? rows.reduce((sum, row) => sum + row.analytics_revenue, 0) / rows.reduce((sum, row) => sum + row.spend, 0)
+                    : 0
+            ),
+            platform_reported_roas: round(
+                rows.reduce((sum, row) => sum + row.spend, 0) > 0
+                    ? rows.reduce((sum, row) => sum + row.platform_revenue, 0) / rows.reduce((sum, row) => sum + row.spend, 0)
+                    : 0
+            ),
+            attribution_gap: round(rows.reduce((sum, row) => sum + row.attribution_gap, 0))
         },
         rows
     };
@@ -680,8 +793,10 @@ module.exports = {
     getMonthlyBrandSales,
     getMonthlyCampaignSales,
     getProductPerformance,
+    getSalesDimensionPerformance,
     getAttributionAnalysis,
     getFunnelPerformance,
     getCohortPerformance,
     getFilterOptions
 };
+

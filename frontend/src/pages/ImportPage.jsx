@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+﻿import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 
-// ─── Status helpers ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Status helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STATUS_MAP = {
     pending:    { label: 'Bekliyor',   color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
     mapping:    { label: 'Eşleniyor', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
@@ -34,7 +34,7 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-// ─── Delete Confirmation Modal ────────────────────────────────────────────────
+// â”€â”€â”€ Delete Confirmation Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DeleteModal = ({ importItem, onConfirm, onCancel, loading }) => (
     <div style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
@@ -50,7 +50,7 @@ const DeleteModal = ({ importItem, onConfirm, onCancel, loading }) => (
                     width: '44px', height: '44px', borderRadius: '50%',
                     background: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '20px', flexShrink: 0,
-                }}>⚠️</div>
+                }}>⚠</div>
                 <div>
                     <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
                         Veri Seti Silinsin mi?
@@ -111,14 +111,14 @@ const DeleteModal = ({ importItem, onConfirm, onCancel, loading }) => (
                             <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                             Siliniyor...
                         </>
-                    ) : '🗑️ Evet, Sil'}
+                    ) : 'Evet, Sil'}
                 </button>
             </div>
         </div>
     </div>
 );
 
-// ─── Import History Tab ───────────────────────────────────────────────────────
+// â”€â”€â”€ Import History Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ImportHistory = ({ onRefresh }) => {
     const [imports, setImports] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -214,7 +214,7 @@ const ImportHistory = ({ onRefresh }) => {
                     boxShadow: '0 8px 24px rgba(0,0,0,0.3)', animation: 'slideInRight 0.3s ease',
                     display: 'flex', alignItems: 'center', gap: '10px',
                 }}>
-                    {toast.type === 'error' ? '❌' : '✅'} {toast.msg}
+                    {toast.type === 'error' ? '✕' : '✓'} {toast.msg}
                 </div>
             )}
 
@@ -230,7 +230,7 @@ const ImportHistory = ({ onRefresh }) => {
 
             {imports.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px', color: 'var(--color-text-muted)' }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>📂</div>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>∅</div>
                     <p style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-text-secondary)' }}>Henüz yükleme yapılmamış</p>
                     <p style={{ fontSize: '13px', marginTop: '6px' }}>İlk veri setinizi yüklemek için "Yeni İçe Aktarma" sekmesini kullanın.</p>
                 </div>
@@ -240,9 +240,9 @@ const ImportHistory = ({ onRefresh }) => {
                     {pagination && (
                         <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                             {[
-                                { label: 'Toplam Kayıt', value: pagination.total, icon: '📋' },
-                                { label: 'Tamamlanan', value: imports.filter(i => i.status === 'completed').length + (pagination.currentPage > 1 ? '...' : ''), icon: '✅' },
-                                { label: 'Başarısız', value: imports.filter(i => i.status === 'failed').length + (pagination.currentPage > 1 ? '...' : ''), icon: '❌' },
+                                { label: 'Toplam Kayıt', value: pagination.total, icon: '' },
+                                { label: 'Tamamlanan', value: imports.filter(i => i.status === 'completed').length + (pagination.currentPage > 1 ? '...' : ''), icon: '✓' },
+                                { label: 'Başarısız', value: imports.filter(i => i.status === 'failed').length + (pagination.currentPage > 1 ? '...' : ''), icon: '✕' },
                             ].map(stat => (
                                 <div key={stat.label} style={{
                                     flex: '1', minWidth: '140px', padding: '14px 18px',
@@ -271,7 +271,7 @@ const ImportHistory = ({ onRefresh }) => {
                             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.2)'; }}
                             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.1)'; }}
                         >
-                            🧹 Geçmiş Kalıntıları Temizle
+                            Geçmiş Kalıntıları Temizle
                         </button>
                     </div>
 
@@ -339,7 +339,7 @@ const ImportHistory = ({ onRefresh }) => {
                                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; e.currentTarget.style.borderColor = '#ef4444'; }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'; }}
                                             >
-                                                🗑️ Sil
+                                                Sil
                                             </button>
                                         </td>
                                     </tr>
@@ -376,12 +376,12 @@ const ImportHistory = ({ onRefresh }) => {
     );
 };
 
-// ─── Main Import Page ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Import Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function ImportPage() {
     const [activeTab, setActiveTab] = useState('new'); // 'new' | 'history'
     const [historyKey, setHistoryKey] = useState(0); // force re-fetch after commit
 
-    // ── New Import wizard state ──
+    // â”€â”€ New Import wizard state â”€â”€
     const [step, setStep] = useState(1);
     const [sourceType, setSourceType] = useState('');
     const [uploading, setUploading] = useState(false);
@@ -514,7 +514,7 @@ export default function ImportPage() {
         }
     };
 
-    // ── Tab style helper ──
+    // â”€â”€ Tab style helper â”€â”€
     const tabStyle = (tab) => ({
         padding: '10px 24px', borderRadius: '10px', border: 'none',
         background: activeTab === tab ? 'var(--color-accent-primary)' : 'transparent',
@@ -573,7 +573,7 @@ export default function ImportPage() {
                         onClick={cancelImport}
                         style={{ padding: '8px 18px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
                     >
-                        ✕ İptal Et
+                        × İptal Et
                     </button>
                 )}
             </div>
@@ -585,14 +585,14 @@ export default function ImportPage() {
                 width: 'fit-content',
             }}>
                 <button id="tab-new-import" style={tabStyle('new')} onClick={() => { setActiveTab('new'); }}>
-                    📤 Yeni İçe Aktarma
+                    Yeni İçe Aktarma
                 </button>
                 <button id="tab-import-history" style={tabStyle('history')} onClick={() => setActiveTab('history')}>
-                    📋 Yükleme Geçmişi
+                    Yükleme Geçmişi
                 </button>
             </div>
 
-            {/* ── New Import Tab ── */}
+            {/* â”€â”€ New Import Tab â”€â”€ */}
             {activeTab === 'new' && (
                 <div>
                     {/* Stepper */}
@@ -626,7 +626,7 @@ export default function ImportPage() {
                     {/* Alerts */}
                     {error && (
                         <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '8px', marginBottom: '20px', border: '1px solid rgba(239,68,68,0.3)', fontSize: '14px' }}>
-                            ⚠️ {error}
+                            ⚠ {error}
                         </div>
                     )}
                     {message && !error && (
@@ -670,10 +670,10 @@ export default function ImportPage() {
                                         <p style={{ color: 'var(--color-accent-primary)', fontWeight: 500 }}>Yükleniyor...</p>
                                     </div>
                                 ) : isDragActive ? (
-                                    <p style={{ color: 'var(--color-accent-primary)', fontWeight: 600, fontSize: '16px' }}>📂 Dosyayı bırakın...</p>
+                                    <p style={{ color: 'var(--color-accent-primary)', fontWeight: 600, fontSize: '16px' }}>Dosyayı bırakın...</p>
                                 ) : (
                                     <div>
-                                        <div style={{ fontSize: '40px', marginBottom: '12px' }}>☁️</div>
+                                        <div style={{ fontSize: '40px', marginBottom: '12px' }}>⇧</div>
                                         <p style={{ fontWeight: 600, marginBottom: '6px', fontSize: '15px' }}>Dosya seçmek için tıklayın veya sürükleyin</p>
                                         <p style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>Maksimum boyut: 50MB (CSV, Excel, JSON)</p>
                                     </div>
@@ -714,8 +714,8 @@ export default function ImportPage() {
 
                             <div style={{ marginBottom: '20px', color: 'var(--color-text-secondary)', fontSize: '14px', padding: '10px 14px', background: 'rgba(99,102,241,0.06)', borderRadius: '8px', border: '1px solid rgba(99,102,241,0.2)' }}>
                                 {autoMappedCount > 0
-                                    ? `ℹ️ ${autoMappedCount} kolon otomatik eşleştirildi. Devam etmeden önce kontrol edebilirsiniz.`
-                                    : 'ℹ️ Otomatik eşleşen kolon bulunamadı. Lütfen gerekli alanları seçin.'}
+                                    ? `${autoMappedCount} kolon otomatik eşleştirildi. Devam etmeden önce kontrol edebilirsiniz.`
+                                    : 'Otomatik eşleşen kolon bulunamadı. Lütfen gerekli alanları seçin.'}
                             </div>
 
                             <button
@@ -739,7 +739,7 @@ export default function ImportPage() {
                             ) : (
                                 <div style={{ background: 'var(--color-bg-secondary)', padding: '24px', borderRadius: '10px', border: '1px solid var(--color-border)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                                        <span style={{ fontSize: '28px' }}>{validationSummary?.valid ? '✅' : '⚠️'}</span>
+                                        <span style={{ fontSize: '28px' }}>{validationSummary?.valid ? '✓' : '⚠'}</span>
                                         <span style={{ fontWeight: 600, fontSize: '16px', color: validationSummary?.valid ? '#10b981' : '#f59e0b' }}>{validationMessage}</span>
                                     </div>
 
@@ -760,7 +760,7 @@ export default function ImportPage() {
 
                                     {!validationSummary?.valid && validationSummary?.errors?.length > 0 && (
                                         <div style={{ marginBottom: '20px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '14px' }}>
-                                            <div style={{ fontWeight: 600, marginBottom: '10px', color: '#f59e0b', fontSize: '13px' }}>⚠️ Hata Örnekleri (ilk 5)</div>
+                                            <div style={{ fontWeight: 600, marginBottom: '10px', color: '#f59e0b', fontSize: '13px' }}>⚠ Hata Örnekleri (ilk 5)</div>
                                             {validationSummary.errors.slice(0, 5).map((row) => (
                                                 <div key={row.row_number} style={{ marginBottom: '6px', color: 'var(--color-text-secondary)', fontSize: '13px' }}>
                                                     <strong>Satır {row.row_number}:</strong> {row.details.map((d) => `${d.field} — ${d.message}`).join(', ')}
@@ -796,7 +796,7 @@ export default function ImportPage() {
                     {/* Step 4 */}
                     {step === 4 && (
                         <div style={{ textAlign: 'center', padding: '48px', background: 'var(--color-bg-secondary)', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.3)' }}>
-                            <div style={{ fontSize: '56px', marginBottom: '16px' }}>🎉</div>
+                            <div style={{ fontSize: '56px', marginBottom: '16px' }}>✓</div>
                             <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px', color: '#10b981' }}>Başarıyla Tamamlandı!</h2>
                             <p style={{ color: 'var(--color-text-secondary)', marginBottom: '28px' }}>Yüklenen veriler başarıyla veritabanına yazıldı.</p>
                             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
@@ -810,7 +810,7 @@ export default function ImportPage() {
                                     onClick={() => { setActiveTab('history'); resetFlow(''); }}
                                     style={{ padding: '11px 24px', background: 'transparent', color: 'var(--color-text-primary)', borderRadius: '8px', border: '1px solid var(--color-border)', cursor: 'pointer', fontWeight: 600 }}
                                 >
-                                    📋 Geçmişi Görüntüle
+                                    Geçmişi Görüntüle
                                 </button>
                             </div>
                         </div>
@@ -818,10 +818,11 @@ export default function ImportPage() {
                 </div>
             )}
 
-            {/* ── History Tab ── */}
+            {/* â”€â”€ History Tab â”€â”€ */}
             {activeTab === 'history' && (
                 <ImportHistory key={historyKey} onRefresh={() => setHistoryKey(k => k + 1)} />
             )}
         </div>
     );
 }
+

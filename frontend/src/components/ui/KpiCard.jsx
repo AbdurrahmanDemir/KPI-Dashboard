@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { IconArrowUpLeft, IconArrowDownRight, IconInfoCircle } from '@tabler/icons-react';
 import { getMetricDefinitionByTitle } from '../../utils/metricDefinitions';
 
@@ -8,7 +8,7 @@ export default function KpiCard({
     prefix = '',
     suffix = '',
     change,
-    comparisonLabel = 'onceki donem',
+    comparisonLabel = '?nceki d?nem',
     isLoading,
     subtitle
 }) {
@@ -91,3 +91,4 @@ export default function KpiCard({
         </div>
     );
 }
+

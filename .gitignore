@@ -1,0 +1,4 @@
+backups/
+NewTemplate/
+backend/*.log
+backend/*.err.log

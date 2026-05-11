@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import useFilterStore from '../store/filterStore';
 import api from '../services/api';
 
@@ -108,7 +108,7 @@ export default function ExportPage() {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (err) {
-            console.error('Indirme hatasi', err);
+            console.error('İndirme hatasi', err);
             setActionError(`${format.toUpperCase()} indirilirken bir hata oluştu.`);
         } finally {
             setDownloadingFormat(null);
@@ -243,7 +243,7 @@ export default function ExportPage() {
                             disabled={downloadingFormat !== null}
                             style={{ ...primaryButtonStyle, background: '#3b82f6' }}
                         >
-                            {downloadingFormat === 'xlsx' ? 'Hazirlaniyor...' : 'Detayli Excel (XLSX) Indir'}
+                            {downloadingFormat === 'xlsx' ? 'Hazırlanıyor...' : 'Detaylı Excel (XLSX) İndir'}
                         </button>
                         <button
                             onClick={() => handleDownload('csv')}
@@ -392,3 +392,4 @@ export default function ExportPage() {
         </div>
     );
 }
+

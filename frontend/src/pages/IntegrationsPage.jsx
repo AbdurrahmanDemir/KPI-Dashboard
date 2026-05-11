@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
 export default function IntegrationsPage() {
     const queryClient = useQueryClient();
     const [selectedPlatform, setSelectedPlatform] = useState('google_ads');
+    const selectedPlatformLabel = selectedPlatform === 'google_ads' ? 'Google Ads' : 'Meta Ads';
     
     // Form state
     const [formData, setFormData] = useState({
@@ -71,6 +72,23 @@ export default function IntegrationsPage() {
         },
         onError: () => {
             alert('Senkronizasyon sırasında hata oluştu.');
+        }
+    });
+
+    const clearMutation = useMutation({
+        mutationFn: async (platform) => {
+            const res = await api.delete(`/integrations/${platform}/data`);
+            return res.data;
+        },
+        onSuccess: (res) => {
+            const details = res?.data
+                ? ` Ads: ${res.data.adsDeleted}, Kampanya: ${res.data.campaignsDeleted}`
+                : '';
+            alert(`Entegrasyon verileri temizlendi.${details}`);
+            queryClient.invalidateQueries({ queryKey: ['integrations'] });
+        },
+        onError: (error) => {
+            alert(error?.response?.data?.message || 'Temizleme sırasında hata oluştu.');
         }
     });
 
@@ -211,6 +229,32 @@ export default function IntegrationsPage() {
                                 </button>
                             </div>
 
+                            <button
+                                onClick={() => {
+                                    const confirmed = window.confirm(
+                                        `${selectedPlatformLabel} i?in eklenmi? test ve senkronize reklam verileri silinecek. Emin misiniz?`
+                                    );
+                                    if (confirmed) {
+                                        clearMutation.mutate(selectedPlatform);
+                                    }
+                                }}
+                                disabled={clearMutation.isPending}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    marginTop: '12px',
+                                    background: 'rgba(239, 68, 68, 0.08)',
+                                    color: '#dc2626',
+                                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    opacity: clearMutation.isPending ? 0.7 : 1
+                                }}
+                            >
+                                {clearMutation.isPending ? 'Temizleniyor...' : 'Test / Uretim Verisini Temizle'}
+                            </button>
+
                             {currentIntegration?.last_sync_at && (
                                 <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginTop: '8px' }}>
                                     Son Senkronizasyon: {new Date(currentIntegration.last_sync_at).toLocaleString('tr-TR')}
@@ -223,3 +267,4 @@ export default function IntegrationsPage() {
         </div>
     );
 }
+

@@ -15,4 +15,7 @@ router.post('/', integrationController.saveIntegration);
 // POST /api/integrations/:platform/sync
 router.post('/:platform/sync', integrationController.syncIntegration);
 
+// DELETE /api/integrations/:platform/data
+router.delete('/:platform/data', integrationController.clearIntegrationData);
+
 module.exports = router;

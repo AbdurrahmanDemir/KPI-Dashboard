@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import DataTable from '../components/ui/DataTable';
@@ -24,9 +24,9 @@ export default function UsersPage() {
             queryClient.invalidateQueries(['users']);
             setIsAdding(false);
             setNewUser({ name: '', email: '', password: '', role: 'viewer' });
-            alert('Kullanici eklendi!');
+            alert('Kullanıcı eklendi!');
         },
-        onError: (err) => alert('Kullanici eklenirken hata: ' + (err.response?.data?.error?.message || err.message))
+        onError: (err) => alert('Kullanıcı eklenirken hata: ' + (err.response?.data?.error?.message || err.message))
     });
 
     const changeRoleMutation = useMutation({
@@ -39,7 +39,7 @@ export default function UsersPage() {
     const roleLabel = (value) => {
         if (value === 'admin') return 'Admin';
         if (value === 'marketing_manager') return 'Pazarlama Yetkilisi';
-        return 'Goruntuleyici';
+        return 'Görüntüleyici';
     };
 
     const columns = [
@@ -57,19 +57,19 @@ export default function UsersPage() {
                 >
                     <option value="admin">Admin</option>
                     <option value="marketing_manager">Pazarlama Yetkilisi</option>
-                    <option value="viewer">Goruntuleyici</option>
+                    <option value="viewer">Görüntüleyici</option>
                 </select>
             )
         },
-        { key: 'created_at', label: 'Kayit Tarihi', formatter: (v) => new Date(v).toLocaleDateString() },
-        { key: 'role_label', label: 'Rol Ozeti', formatter: (_, row) => roleLabel(row.role) }
+        { key: 'created_at', label: 'Kayıt Tarihi', formatter: (v) => new Date(v).toLocaleDateString() },
+        { key: 'role_label', label: 'Rol Özeti', formatter: (_, row) => roleLabel(row.role) }
     ];
 
     return (
         <div style={{ padding: '24px', fontFamily: 'var(--font-sans)', color: 'var(--color-text-primary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Kullanici ve Rol Yonetimi</h1>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Kullanıcı ve Rol Yönetimi</h1>
                     <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
                         Sisteme yeni ekip arkadaslari ekleyin ve yetkilerini Admin, Pazarlama Yetkilisi veya Viewer olarak belirleyin.
                     </p>
@@ -78,7 +78,7 @@ export default function UsersPage() {
                     onClick={() => setIsAdding(!isAdding)}
                     style={{ padding: '10px 16px', background: 'var(--color-accent-primary)', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
                 >
-                    {isAdding ? 'Iptal' : 'Yeni Kullanici Ekle'}
+                    {isAdding ? 'İptal' : 'Yeni Kullanıcı Ekle'}
                 </button>
             </div>
 
@@ -99,7 +99,7 @@ export default function UsersPage() {
                     <div style={{ flex: 1, minWidth: '180px' }}>
                         <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px' }}>Rol</label>
                         <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)', background: 'var(--color-bg-primary)', color: 'white' }}>
-                            <option value="viewer">Goruntuleyici</option>
+                            <option value="viewer">Görüntüleyici</option>
                             <option value="marketing_manager">Pazarlama Yetkilisi</option>
                             <option value="admin">Admin</option>
                         </select>
@@ -113,7 +113,7 @@ export default function UsersPage() {
             )}
 
             <DataTable
-                title="Sistem Kullanicilari"
+                title="Sistem Kullanıcıları"
                 columns={columns}
                 data={usersData}
                 exportFileName="kullanicilar.csv"
@@ -124,3 +124,4 @@ export default function UsersPage() {
         </div>
     );
 }
+

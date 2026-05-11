@@ -1,4 +1,4 @@
-function toDate(value) {
+﻿function toDate(value) {
     if (!value) return null;
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -81,3 +81,4 @@ export function getComparisonLabel(filters = {}) {
     if (!range) return '';
     return `${range.start_date} - ${range.end_date}`;
 }
+

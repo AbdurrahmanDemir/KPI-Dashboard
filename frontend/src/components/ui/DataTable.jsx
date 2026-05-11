@@ -1,6 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import EmptyState from './EmptyState';
 import LoadingState from './LoadingState';
+
+const FALLBACK_VALUE_HINTS = {
+    'Tanımsız ürün': 'Bu satırdaki kayıtlarda ürün adı alanı boş geldiği için sistem bunları Tanımsız ürün olarak gruplayıp gösterir.',
+    Kategorisiz: 'Bu kayıtlarda kategori bilgisi boş geldiği için sistem Kategorisiz etiketiyle gösterir.',
+    Bilinmiyor: 'Bu kayıtlarda ilgili alan boş veya eşleşememiş geldiği için sistem Bilinmiyor etiketiyle gösterir.',
+    Kampanyasız: 'Bu kayıtlarda kampanya adı bilgisi bulunmadığı için sistem Kampanyasız etiketiyle gösterir.',
+};
 
 export default function DataTable({ 
     columns = [], 
@@ -70,7 +77,8 @@ export default function DataTable({
                     ...row,
                     [groupBy]: groupValue,
                     __group_count: 0,
-                    __aggregate_meta: {}
+                    __aggregate_meta: {},
+                    __rows: []
                 };
 
                 columns.forEach((column) => {
@@ -86,9 +94,11 @@ export default function DataTable({
 
             const bucket = groups.get(groupValue);
             bucket.__group_count += 1;
+            bucket.__rows.push(row);
 
             columns.forEach((column) => {
                 if (column.key === groupBy) return;
+                if (typeof column.aggregate === 'function') return;
 
                 const value = row[column.key];
                 if (typeof value === 'number' && Number.isFinite(value)) {
@@ -109,12 +119,18 @@ export default function DataTable({
         });
 
         return Array.from(groups.values()).map((item) => {
-            const { __aggregate_meta, ...rest } = item;
+            columns.forEach((column) => {
+                if (typeof column.aggregate === 'function') {
+                    item[column.key] = column.aggregate(item.__rows);
+                }
+            });
+
+            const { __aggregate_meta, __rows, ...rest } = item;
             return rest;
         });
     }, [columns, enableGrouping, filteredData, groupBy]);
 
-    // Sıralama Mantığı
+    // Sıralama mantığı
     const sortedData = useMemo(() => {
         let sortableItems = [...transformedData];
         if (sortConfig.key !== null) {
@@ -131,7 +147,7 @@ export default function DataTable({
         return sortableItems;
     }, [transformedData, sortConfig]);
 
-    // Sayfalama Mantığı
+    // Sayfalama mantığı
     const totalPages = Math.ceil(sortedData.length / rowsPerPage) || 1;
     const paginatedData = useMemo(() => {
         const startIndex = (currentPage - 1) * rowsPerPage;
@@ -150,13 +166,13 @@ export default function DataTable({
         setSortConfig({ key, direction });
     };
 
-    // CSV Dışa Aktar
+    // CSV dışa aktar
     const exportToCSV = () => {
         const headers = columns.map(c => c.label).join(',');
         const rows = sortedData.map(row => 
             columns.map(c => {
                 let val = row[c.key] !== undefined && row[c.key] !== null ? row[c.key] : '';
-                // virgül içeren metinleri tırnak içine al
+                // Virgül içeren metinleri tırnak içine al.
                 if (typeof val === 'string' && val.includes(',')) {
                     val = `"${val}"`;
                 }
@@ -177,13 +193,48 @@ export default function DataTable({
 
     const isGrouped = Boolean(enableGrouping && groupBy);
 
+    const renderFallbackHint = (content) => {
+        if (React.isValidElement(content)) return content;
+        if (typeof content !== 'string') return content;
+
+        const hint = FALLBACK_VALUE_HINTS[content];
+        if (!hint) return content;
+
+        return (
+            <span
+                title={hint}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'help' }}
+            >
+                <span>{content}</span>
+                <span
+                    aria-label="Açıklama"
+                    style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '999px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#1d4ed8',
+                        background: 'rgba(29, 78, 216, 0.12)',
+                        border: '1px solid rgba(29, 78, 216, 0.2)',
+                    }}
+                >
+                    ?
+                </span>
+            </span>
+        );
+    };
+
     if (isLoading) {
         return (
             <div style={{ background: 'var(--color-bg-secondary)', borderRadius: '12px', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid var(--color-border)' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>{title}</h3>
                 </div>
-                <LoadingState message="Tablo yukleniyor..." height={170} />
+                <LoadingState message="Tablo yükleniyor..." height={170} />
             </div>
         );
     }
@@ -247,7 +298,7 @@ export default function DataTable({
                             gap: '6px'
                         }}
                     >
-                        📥 CSV Aktar
+                        CSV Aktar
                     </button>
                 </div>
             </div>
@@ -285,14 +336,14 @@ export default function DataTable({
                             <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
                                 {columns.map(col => (
                                     <td key={col.key} style={{ padding: '12px 24px', color: 'var(--color-text-primary)' }}>
-                                        {col.formatter ? col.formatter(row[col.key], row) : row[col.key]}
+                                        {renderFallbackHint(col.formatter ? col.formatter(row[col.key], row) : row[col.key])}
                                     </td>
                                 ))}
                             </tr>
                         )) : (
                             <tr>
                                 <td colSpan={columns.length} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                                    <EmptyState compact message="Aramaniza/filtrenize uygun tablo verisi bulunamadi." />
+                                    <EmptyState compact message="Aramanıza/filtrenize uygun tablo verisi bulunamadı." />
                                 </td>
                             </tr>
                         )}
@@ -304,7 +355,7 @@ export default function DataTable({
             {totalPages > 1 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', borderTop: '1px solid var(--color-border)' }}>
                     <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
-                        {isGrouped ? 'Gruplanmis ' : ''}toplam {sortedData.length} kayittan {(currentPage - 1) * rowsPerPage + 1} - {Math.min(currentPage * rowsPerPage, sortedData.length)} arasi gosteriliyor
+                        {isGrouped ? 'Gruplanmış ' : ''}toplam {sortedData.length} kayıttan {(currentPage - 1) * rowsPerPage + 1} - {Math.min(currentPage * rowsPerPage, sortedData.length)} arası gösteriliyor
                     </span>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <button 
@@ -327,3 +378,4 @@ export default function DataTable({
         </div>
     );
 }
+

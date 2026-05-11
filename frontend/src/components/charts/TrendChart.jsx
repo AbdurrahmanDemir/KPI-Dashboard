@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Chart from 'react-apexcharts';
 import EmptyState from '../ui/EmptyState';
 import LoadingState from '../ui/LoadingState';
@@ -10,7 +10,7 @@ export default function TrendChart({ data = [], isLoading, title = 'Günlük Cir
         return (
             <div style={containerStyle}>
                 <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
-                <LoadingState message="Trend grafik yukleniyor..." height={300} />
+                <LoadingState message="Trend grafik yükleniyor..." height={300} />
             </div>
         );
     }
@@ -19,7 +19,7 @@ export default function TrendChart({ data = [], isLoading, title = 'Günlük Cir
         return (
             <div style={containerStyle}>
                 <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', color: 'var(--color-text-primary)' }}>{title}</h3>
-                <EmptyState message="Mevcut filtrede trend verisi bulunamadi." height={300} />
+                <EmptyState message="Mevcut filtrede trend verisi bulunamadı." height={300} />
             </div>
         );
     }
@@ -87,3 +87,4 @@ export default function TrendChart({ data = [], isLoading, title = 'Günlük Cir
         </div>
     );
 }
+

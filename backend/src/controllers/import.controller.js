@@ -4,6 +4,8 @@ const csv = require('csv-parser');
 const xlsx = require('xlsx');
 const { Op } = require('sequelize');
 const ImportLog = require('../models/ImportLog');
+const ImportRawRow = require('../models/ImportRawRow');
+const ImportStagingRow = require('../models/ImportStagingRow');
 const SalesData = require('../models/SalesData');
 const AdsData = require('../models/AdsData');
 const TrafficData = require('../models/TrafficData');
@@ -29,7 +31,7 @@ const resolveTargetModel = (sourceType) => {
     return null;
 };
 
-const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData];
+const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData, ImportRawRow, ImportStagingRow];
 
 const toNumber = (value) => {
     if (value === null || value === undefined || value === '') return null;
@@ -299,6 +301,11 @@ const parseHeadersFromUpload = async (fileName, fileType) => {
     return [];
 };
 
+const getTargetTableName = (sourceType) => {
+    const targetModel = resolveTargetModel(sourceType);
+    return targetModel?.getTableName?.() || targetModel?.tableName || 'unknown';
+};
+
 const buildNormalizedRecords = (rows, importLog) => {
     const mapping = Object.keys(importLog.mapping_config || {}).length > 0
         ? importLog.mapping_config
@@ -460,6 +467,8 @@ const analyzeImport = async (importLog) => {
     const seen = new Set();
     const validRecords = [];
     const errors = [];
+    const pipelineRows = [];
+    const targetTable = getTargetTableName(importLog.source_type);
 
     for (const item of records) {
         const rowErrors = validateNormalizedRecord(importLog.source_type, item.normalized);
@@ -479,16 +488,61 @@ const analyzeImport = async (importLog) => {
                 raw: item.raw,
                 details: rowErrors
             });
+            pipelineRows.push({
+                row_number: item.row_number,
+                raw: item.raw,
+                normalized: item.normalized,
+                validation_errors: rowErrors,
+                is_valid: false,
+                target_table: targetTable
+            });
         } else {
             validRecords.push(item.normalized);
+            pipelineRows.push({
+                row_number: item.row_number,
+                raw: item.raw,
+                normalized: item.normalized,
+                validation_errors: [],
+                is_valid: true,
+                target_table: targetTable
+            });
         }
     }
 
     return {
         rowCount: rows.length,
         validRecords,
-        errors
+        errors,
+        pipelineRows
     };
+};
+
+const syncImportPipelineRows = async (importLog, analysis, stageStatus = 'validated') => {
+    const rawRows = analysis.pipelineRows.map((row) => ({
+        import_id: importLog.id,
+        row_number: row.row_number,
+        source_type: importLog.source_type,
+        raw_payload: row.raw,
+        validation_status: row.is_valid
+            ? (stageStatus === 'committed' ? 'committed' : 'valid')
+            : 'error',
+        validation_errors: row.validation_errors
+    }));
+
+    const stagingRows = analysis.pipelineRows.map((row) => ({
+        import_id: importLog.id,
+        row_number: row.row_number,
+        source_type: importLog.source_type,
+        target_table: row.target_table,
+        normalized_payload: row.normalized,
+        staging_status: row.is_valid ? stageStatus : 'error',
+        validation_errors: row.validation_errors
+    }));
+
+    await ImportRawRow.destroy({ where: { import_id: importLog.id } });
+    await ImportStagingRow.destroy({ where: { import_id: importLog.id } });
+    await bulkInsertChunked(ImportRawRow, rawRows, 500);
+    await bulkInsertChunked(ImportStagingRow, stagingRows, 500);
 };
 
 const ensureImportOwnership = async (req, id) => {
@@ -643,6 +697,7 @@ const validateImport = async (req, res) => {
 
         const analysis = await analyzeImport(importLog);
         const nextStatus = analysis.validRecords.length > 0 ? 'processing' : 'failed';
+        await syncImportPipelineRows(importLog, analysis, 'validated');
 
         await importLog.update({
             status: nextStatus,
@@ -682,6 +737,51 @@ const getErrors = async (req, res) => {
     }
 };
 
+const getPipeline = async (req, res) => {
+    try {
+        const importLog = await ensureImportOwnership(req, req.params.id);
+        if (!importLog) return errorResponse(res, 404, 'NOT_FOUND', 'Kayit bulunamadi.');
+        if (importLog === 'FORBIDDEN') return errorResponse(res, 403, 'FORBIDDEN', 'Bu import kaydina erisim yetkiniz yok.');
+
+        const [rawRows, stagingRows, rawCount, stagingCount, validRawCount, errorRawCount, committedStagingCount] = await Promise.all([
+            ImportRawRow.findAll({
+                where: { import_id: importLog.id },
+                order: [['row_number', 'ASC']],
+                limit: 20,
+                raw: true
+            }),
+            ImportStagingRow.findAll({
+                where: { import_id: importLog.id },
+                order: [['row_number', 'ASC']],
+                limit: 20,
+                raw: true
+            }),
+            ImportRawRow.count({ where: { import_id: importLog.id } }),
+            ImportStagingRow.count({ where: { import_id: importLog.id } }),
+            ImportRawRow.count({ where: { import_id: importLog.id, validation_status: { [Op.in]: ['valid', 'committed'] } } }),
+            ImportRawRow.count({ where: { import_id: importLog.id, validation_status: 'error' } }),
+            ImportStagingRow.count({ where: { import_id: importLog.id, staging_status: 'committed' } })
+        ]);
+
+        return successResponse(res, {
+            import_id: importLog.id,
+            source_type: importLog.source_type,
+            summary: {
+                raw_count: rawCount,
+                staging_count: stagingCount,
+                valid_raw_count: validRawCount,
+                error_raw_count: errorRawCount,
+                committed_staging_count: committedStagingCount
+            },
+            raw_rows: rawRows,
+            staging_rows: stagingRows
+        });
+    } catch (err) {
+        console.error('[IMPORT] Pipeline detayi hatasi:', err);
+        return errorResponse(res, 500, 'INTERNAL_ERROR', 'Pipeline detaylari getirilemedi.');
+    }
+};
+
 // Yardimci: buyuk dizileri kucuk parcalara (chunk) bolerek toplu insert yapar.
 const bulkInsertChunked = async (Model, records, chunkSize = 500) => {
     for (let i = 0; i < records.length; i += chunkSize) {
@@ -715,6 +815,7 @@ const commitImport = async (req, res) => {
         const analysis = await analyzeImport(importLog);
 
         if (analysis.validRecords.length === 0) {
+            await syncImportPipelineRows(importLog, analysis, 'validated');
             await importLog.update({
                 status: 'failed',
                 row_count: analysis.rowCount,
@@ -726,6 +827,7 @@ const commitImport = async (req, res) => {
 
         // 500'er satirlik parcalarla insert et — buyuk dosyalarda timeout onlenir
         await bulkInsertChunked(targetTable, analysis.validRecords, 500);
+        await syncImportPipelineRows(importLog, analysis, 'committed');
         await KpiCache.destroy({ where: {} });
 
         await importLog.update({
@@ -810,6 +912,7 @@ module.exports = {
     mapColumns,
     validateImport,
     getErrors,
+    getPipeline,
     commitImport,
     deleteImport,
     purgeOrphanData

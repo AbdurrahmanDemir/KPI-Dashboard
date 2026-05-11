@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import useFilterStore from '../store/filterStore';
@@ -19,8 +19,8 @@ export default function TrafficAnalysisPage() {
     const comparisonFilters = buildComparisonFilters(filters);
     const comparisonQueryString = comparisonFilters ? buildQueryString(comparisonFilters) : '';
     const comparisonLabel = filters.compare_previous_period
-        ? `onceki donem (${getComparisonLabel(filters)})`
-        : 'onceki donem';
+        ? `?nceki d?nem (${getComparisonLabel(filters)})`
+        : '?nceki d?nem';
 
     const { data: summaryData, isLoading, error } = useQuery({
         queryKey: ['traffic-summary', queryString],
@@ -69,3 +69,4 @@ export default function TrafficAnalysisPage() {
         </div>
     );
 }
+

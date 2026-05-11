@@ -1,7 +1,8 @@
-const { Op } = require('sequelize');
+﻿const { Op } = require('sequelize');
 const TrafficData = require('../models/TrafficData');
 const AdsData = require('../models/AdsData');
 const SalesData = require('../models/SalesData');
+const { buildAttributionInsight } = require('./insight.service');
 
 const round = (value, digits = 2) => Number(Number(value || 0).toFixed(digits));
 
@@ -225,35 +226,32 @@ const buildAttributionRows = (trafficRows, adsRows, salesRows, filters) => {
 
     const rows = Object.values(grouped)
         .map((row) => {
-            const ctr = row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0;
-            const analyticsCvr = row.analytics_sessions > 0 ? (row.analytics_orders / row.analytics_sessions) * 100 : 0;
-            const platformRoas = row.spend > 0 ? row.platform_revenue / row.spend : 0;
-            const analyticsRoas = row.spend > 0 ? row.analytics_revenue / row.spend : 0;
-            const attributionGap = row.platform_revenue - row.analytics_revenue;
-
-            let likelyIssue = 'Dengeli';
-            if (row.spend > 0 && row.clicks === 0) {
-                likelyIssue = 'Teslimat var ama tiklama yok';
-            } else if (ctr < 1.2) {
-                likelyIssue = 'Ilgi dusuk: kreatif / hedefleme kontrol edilmeli';
-            } else if (analyticsCvr < 1) {
-                likelyIssue = 'Tiklama var ama satisa donusum zayif';
-            } else if (attributionGap > row.analytics_revenue * 0.25) {
-                likelyIssue = 'Platform gelir iddiasi analytics kaynagindan yuksek';
-            }
+            const insight = buildAttributionInsight({
+                spend: row.spend,
+                impressions: row.impressions,
+                clicks: row.clicks,
+                sessions: row.analytics_sessions,
+                analyticsOrders: row.analytics_orders,
+                analyticsRevenue: row.analytics_revenue,
+                platformRevenue: row.platform_revenue
+            });
 
             return {
                 ...row,
                 spend: round(row.spend),
                 platform_revenue: round(row.platform_revenue),
                 analytics_revenue: round(row.analytics_revenue),
-                ctr: round(ctr),
-                analytics_cvr: round(analyticsCvr),
-                platform_roas: round(platformRoas),
-                analytics_roas: round(analyticsRoas),
-                attribution_gap: round(attributionGap),
+                ctr: insight.ctr,
+                analytics_cvr: insight.analytics_cvr,
+                platform_roas: insight.platform_roas,
+                analytics_roas: insight.analytics_roas,
+                attribution_gap: insight.attribution_gap,
                 source_of_truth: filters.channel ? toLabel(normalizeChannel(filters.channel)) : 'Google Analytics',
-                likely_issue: likelyIssue
+                likely_issue: insight.diagnosis,
+                diagnosis: insight.diagnosis,
+                insight_code: insight.code,
+                insight_severity: insight.severity,
+                recommended_action: insight.recommended_action
             };
         });
 
@@ -503,10 +501,10 @@ const getProductPerformanceSummary = async (filters) => {
     const rows = await getSalesRows(filters, true);
 
     const grouped = rows.reduce((acc, row) => {
-        const key = row.product_name || row.product_category || 'Tanimsiz urun';
+        const key = row.product_name || row.product_category || 'Tanımsız ürün';
         acc[key] ||= {
             id: key,
-            product_name: row.product_name || 'Tanimsiz urun',
+            product_name: row.product_name || 'Tanımsız ürün',
             product_category: row.product_category || 'Kategorisiz',
             revenue: 0,
             orders: 0,
@@ -590,3 +588,4 @@ module.exports = {
     getAttributionOverview,
     getSalesAdFormatPerformance
 };
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
@@ -53,7 +53,7 @@ export default function SettingsPage() {
         <div style={{ padding: '24px', fontFamily: 'var(--font-sans)', color: 'var(--color-text-primary)' }}>
             <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Ayarlar</h1>
             <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-                Profil ozeti ve kanal esleme yonetimini bu ekrandan yapin.
+                Profil ?zeti ve kanal e?leme y?netimini bu ekrandan yap?n.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginBottom: '24px' }}>
@@ -95,3 +95,4 @@ export default function SettingsPage() {
         </div>
     );
 }
+

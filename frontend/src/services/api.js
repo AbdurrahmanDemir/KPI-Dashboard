@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 const api = axios.create({
     baseURL: '/api',
@@ -8,7 +8,7 @@ const api = axios.create({
     },
 });
 
-// ─── Request Interceptor — Token ekleme ──────────────────────────────────────
+// â”€â”€â”€ Request Interceptor — Token ekleme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
@@ -20,7 +20,7 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ─── Response Interceptor — Token yenileme ───────────────────────────────────
+// â”€â”€â”€ Response Interceptor — Token yenileme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -58,3 +58,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+

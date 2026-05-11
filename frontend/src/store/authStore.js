@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import api from '../services/api';
 
 const useAuthStore = create((set, get) => ({
@@ -6,7 +6,7 @@ const useAuthStore = create((set, get) => ({
     isAuthenticated: false,
     isLoading: true, // Başlangıçta true — token kontrolü yapılıyor
 
-    // ─── Token'dan kullanıcı yükle (sayfa yenilenince) ───────────────────────────
+    // â”€â”€â”€ Token'dan kullanıcı yükle (sayfa yenilenince) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     init: async () => {
         const token = localStorage.getItem('access_token');
         if (!token) {
@@ -23,7 +23,7 @@ const useAuthStore = create((set, get) => ({
         }
     },
 
-    // ─── Giriş ───────────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Giriş â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     login: async (email, password) => {
         const res = await api.post('/auth/login', { email, password });
         const { access_token, refresh_token, user } = res.data.data;
@@ -35,7 +35,7 @@ const useAuthStore = create((set, get) => ({
         return user;
     },
 
-    // ─── Çıkış ──────────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Çıkış â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     logout: async () => {
         try {
             await api.post('/auth/logout', {
@@ -49,3 +49,4 @@ const useAuthStore = create((set, get) => ({
 }));
 
 export default useAuthStore;
+

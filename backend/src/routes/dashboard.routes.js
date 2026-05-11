@@ -10,6 +10,7 @@ const {
     getMonthlyBrandSales,
     getMonthlyCampaignSales,
     getProductPerformance,
+    getSalesDimensionPerformance,
     getAttributionAnalysis,
     getFunnel,
     getCohort
@@ -23,6 +24,7 @@ router.get('/campaign-product-performance', authenticate, getCampaignProductPerf
 router.get('/monthly-brand-sales', authenticate, getMonthlyBrandSales);
 router.get('/monthly-campaign-sales', authenticate, getMonthlyCampaignSales);
 router.get('/product-performance', authenticate, getProductPerformance);
+router.get('/sales-dimension-performance', authenticate, getSalesDimensionPerformance);
 router.get('/attribution-analysis', authenticate, getAttributionAnalysis);
 router.get('/funnel', authenticate, getFunnel);
 router.get('/cohort', authenticate, getCohort);
