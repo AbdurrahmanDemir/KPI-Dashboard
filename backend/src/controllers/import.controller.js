@@ -10,6 +10,9 @@ const SalesData = require('../models/SalesData');
 const AdsData = require('../models/AdsData');
 const TrafficData = require('../models/TrafficData');
 const FunnelData = require('../models/FunnelData');
+const CampaignData = require('../models/CampaignData');
+const ChannelMapping = require('../models/ChannelMapping');
+const CustomerData = require('../models/CustomerData');
 const KpiCache = require('../models/KpiCache');
 const AuditLog = require('../models/AuditLog');
 const { detectSourceType, getSourceFields, getRequiredFields, suggestMapping } = require('../services/importMapping.service');
@@ -27,11 +30,14 @@ const resolveTargetModel = (sourceType) => {
     if (sourceType === 'sales' || sourceType === 'order_items') return SalesData;
     if (sourceType === 'google_analytics' || sourceType === 'ga4_items') return TrafficData;
     if (sourceType === 'meta_ads' || sourceType === 'google_ads') return AdsData;
+    if (sourceType === 'campaigns') return CampaignData;
+    if (sourceType === 'channel_mapping') return ChannelMapping;
+    if (sourceType === 'customers') return CustomerData;
     if (sourceType === 'funnel') return FunnelData;
     return null;
 };
 
-const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData, ImportRawRow, ImportStagingRow];
+const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData, CampaignData, ChannelMapping, CustomerData, ImportRawRow, ImportStagingRow];
 
 const toNumber = (value) => {
     if (value === null || value === undefined || value === '') return null;
@@ -64,6 +70,11 @@ const toDateOnly = (value) => {
     return date.toISOString().slice(0, 10);
 };
 
+const toBoolean = (value) => {
+    const normalized = String(value ?? '').trim().toLowerCase();
+    return ['true', '1', 'yes', 'evet', 'paid'].includes(normalized);
+};
+
 const normalizeSalesStatus = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
 
@@ -72,6 +83,14 @@ const normalizeSalesStatus = (value) => {
     if (['refunded', 'refund', 'returned', 'iade'].includes(normalized)) return 'refunded';
 
     return 'completed';
+};
+
+const normalizeCampaignStatus = (value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (['active', 'enabled', 'running'].includes(normalized)) return 'active';
+    if (['paused', 'disabled'].includes(normalized)) return 'paused';
+    if (['completed', 'complete', 'ended', 'finished', 'archived'].includes(normalized)) return 'ended';
+    return 'active';
 };
 
 const normalizeTrafficPercentage = (value) => {
@@ -193,6 +212,41 @@ const normalizeImportedRecord = (record, sourceType, row) => {
         normalized.currency = 'TRY'; // Her durumda ana paramiz TRY kabul edilecek
     }
 
+    if (sourceType === 'campaigns') {
+        normalized.platform = normalized.platform === 'google' ? 'google_ads' : normalized.platform;
+        normalized.platform = ['meta', 'google_ads'].includes(normalized.platform) ? normalized.platform : 'meta';
+        normalized.start_date = toDateOnly(normalized.start_date);
+        normalized.end_date = toDateOnly(normalized.end_date);
+        normalized.budget = toNumber(normalized.budget)
+            ?? toNumber(normalized.daily_budget)
+            ?? toNumber(normalized.total_budget)
+            ?? 0;
+        normalized.budget_type = normalized.budget_type || (normalized.total_budget ? 'lifetime' : 'daily');
+        normalized.target_roas = toNumber(normalized.target_roas);
+        normalized.currency = String(normalized.currency || 'TRY').toUpperCase().slice(0, 3);
+        normalized.status = normalizeCampaignStatus(normalized.status);
+    }
+
+    if (sourceType === 'channel_mapping') {
+        normalized.source = normalized.source || '(direct)';
+        normalized.medium = normalized.medium || '(none)';
+        normalized.channel_group = normalized.channel_group || 'Direct';
+        normalized.platform = normalized.platform || null;
+        normalized.is_paid = normalized.is_paid !== undefined
+            ? toBoolean(normalized.is_paid)
+            : String(normalized.medium).toLowerCase().includes('cpc')
+                || String(normalized.channel_group).toLowerCase().includes('paid');
+    }
+
+    if (sourceType === 'customers') {
+        normalized.first_order_date = toDateOnly(normalized.first_order_date);
+        normalized.registration_date = toDateOnly(normalized.registration_date);
+        normalized.last_order_date = toDateOnly(normalized.last_order_date);
+        normalized.is_newsletter_subscriber = toBoolean(normalized.is_newsletter_subscriber);
+        normalized.total_orders = toInteger(normalized.total_orders) ?? 0;
+        normalized.total_revenue = toNumber(normalized.total_revenue) ?? 0;
+    }
+
     if (sourceType === 'funnel') {
         normalized.date = toDateOnly(normalized.date);
         normalized.step_order = toInteger(normalized.step_order) ?? 0;
@@ -229,6 +283,10 @@ const applySourceDefaults = (record, sourceType, row) => {
         }
     }
 
+    if (sourceType === 'campaigns') {
+        if (!record.currency) record.currency = 'TRY';
+    }
+
     return record;
 };
 
@@ -243,7 +301,9 @@ const parseImportFile = async (importLog) => {
         const rows = [];
         await new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
-                .pipe(csv())
+                .pipe(csv({
+                    mapHeaders: ({ header }) => String(header || '').replace(/^\uFEFF/g, '').trim()
+                }))
                 .on('data', (data) => rows.push(data))
                 .on('end', resolve)
                 .on('error', reject);
@@ -274,7 +334,9 @@ const parseHeadersFromUpload = async (fileName, fileType) => {
 
     if (fileType === 'csv') {
         return new Promise((resolve, reject) => {
-            const stream = fs.createReadStream(filePath).pipe(csv());
+            const stream = fs.createReadStream(filePath).pipe(csv({
+                mapHeaders: ({ header }) => String(header || '').replace(/^\uFEFF/g, '').trim()
+            }));
 
             stream
                 .on('headers', (headers) => {
@@ -352,6 +414,12 @@ const getDuplicateKey = (sourceType, record) => {
         return `ads::${record.platform || ''}::${record.platform_id || ''}::${record.date || ''}::${record.campaign_name || ''}::${record.adset || record.ad_group || ''}::${record.ad_name || ''}::${record.impressions ?? ''}::${record.clicks ?? ''}::${record.spend ?? ''}`;
     if (sourceType === 'funnel')
         return `funnel::${record.date || ''}::${record.channel || ''}::${record.device || ''}::${record.step_order || ''}::${record.step_name || ''}`;
+    if (sourceType === 'campaigns')
+        return `campaigns::${record.campaign_name || ''}::${record.platform || ''}`;
+    if (sourceType === 'channel_mapping')
+        return `channel_mapping::${record.source || ''}::${record.medium || ''}`;
+    if (sourceType === 'customers')
+        return `customers::${record.customer_id || ''}`;
     return null;
 };
 
@@ -386,6 +454,17 @@ const validateNormalizedRecord = (sourceType, record) => {
     if (sourceType === 'funnel') {
         if (!record.date) details.push({ field: 'date', message: 'Gecersiz tarih.' });
         if ((record.step_order || 0) <= 0) details.push({ field: 'step_order', message: 'Adim sirasi 1 veya daha buyuk olmali.' });
+    }
+
+    if (sourceType === 'campaigns') {
+        if (!record.start_date) details.push({ field: 'start_date', message: 'Gecersiz baslangic tarihi.' });
+        if (record.budget < 0) details.push({ field: 'budget', message: 'Negatif butce kabul edilmez.' });
+    }
+
+    if (sourceType === 'customers') {
+        if (!record.customer_id) details.push({ field: 'customer_id', message: 'Musteri ID gerekli.' });
+        if (record.total_orders < 0) details.push({ field: 'total_orders', message: 'Negatif siparis sayisi kabul edilmez.' });
+        if (record.total_revenue < 0) details.push({ field: 'total_revenue', message: 'Negatif ciro kabul edilmez.' });
     }
 
     return details;

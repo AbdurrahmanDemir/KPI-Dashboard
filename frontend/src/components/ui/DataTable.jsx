@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import EmptyState from './EmptyState';
 import LoadingState from './LoadingState';
 
@@ -23,6 +23,30 @@ export default function DataTable({
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [groupBy, setGroupBy] = useState('');
+    const [columnMenuOpen, setColumnMenuOpen] = useState(false);
+    const [visibleColumnKeys, setVisibleColumnKeys] = useState(() => columns.map((column) => column.key));
+    const previousColumnKeysRef = useRef(columns.map((column) => column.key));
+    const columnKeySignature = columns.map((column) => column.key).join('|');
+
+    useEffect(() => {
+        const nextKeys = columnKeySignature ? columnKeySignature.split('|') : [];
+        const previousKeys = previousColumnKeysRef.current;
+
+        setVisibleColumnKeys((current) => {
+            const validCurrent = current.filter((key) => nextKeys.includes(key));
+            const newKeys = nextKeys.filter((key) => !previousKeys.includes(key));
+            const nextVisible = [...validCurrent, ...newKeys];
+
+            return nextVisible.length > 0 ? nextVisible : nextKeys;
+        });
+
+        previousColumnKeysRef.current = nextKeys;
+    }, [columnKeySignature]);
+
+    const visibleColumns = useMemo(() => {
+        const visibleSet = new Set(visibleColumnKeys);
+        return columns.filter((column) => visibleSet.has(column.key));
+    }, [columns, visibleColumnKeys]);
 
     const resolvedGroupOptions = useMemo(() => {
         if (!enableGrouping) return [];
@@ -56,13 +80,13 @@ export default function DataTable({
 
         const normalizedSearch = searchTerm.trim().toLowerCase();
         return data.filter((row) =>
-            columns.some((column) => {
+            visibleColumns.some((column) => {
                 const cell = row[column.key];
                 if (cell === null || cell === undefined) return false;
                 return String(cell).toLowerCase().includes(normalizedSearch);
             })
         );
-    }, [columns, data, searchTerm]);
+    }, [data, searchTerm, visibleColumns]);
 
     const transformedData = useMemo(() => {
         if (!enableGrouping || !groupBy) return filteredData;
@@ -125,7 +149,9 @@ export default function DataTable({
                 }
             });
 
-            const { __aggregate_meta, __rows, ...rest } = item;
+            const rest = { ...item };
+            delete rest.__aggregate_meta;
+            delete rest.__rows;
             return rest;
         });
     }, [columns, enableGrouping, filteredData, groupBy]);
@@ -168,9 +194,9 @@ export default function DataTable({
 
     // CSV dışa aktar
     const exportToCSV = () => {
-        const headers = columns.map(c => c.label).join(',');
+        const headers = visibleColumns.map(c => c.label).join(',');
         const rows = sortedData.map(row => 
-            columns.map(c => {
+            visibleColumns.map(c => {
                 let val = row[c.key] !== undefined && row[c.key] !== null ? row[c.key] : '';
                 // Virgül içeren metinleri tırnak içine al.
                 if (typeof val === 'string' && val.includes(',')) {
@@ -192,6 +218,21 @@ export default function DataTable({
     };
 
     const isGrouped = Boolean(enableGrouping && groupBy);
+    const canHideColumn = visibleColumns.length > 1;
+
+    const toggleColumnVisibility = (key) => {
+        setVisibleColumnKeys((current) => {
+            if (current.includes(key)) {
+                if (current.length === 1) return current;
+                return current.filter((item) => item !== key);
+            }
+
+            const next = columns
+                .map((column) => column.key)
+                .filter((columnKey) => current.includes(columnKey) || columnKey === key);
+            return next;
+        });
+    };
 
     const renderFallbackHint = (content) => {
         if (React.isValidElement(content)) return content;
@@ -283,6 +324,75 @@ export default function DataTable({
                         </select>
                     )}
 
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            type="button"
+                            onClick={() => setColumnMenuOpen((current) => !current)}
+                            style={{
+                                padding: '6px 12px',
+                                background: 'transparent',
+                                color: 'var(--color-text-secondary)',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                            }}
+                        >
+                            Sütunlar
+                        </button>
+
+                        {columnMenuOpen && (
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    top: 'calc(100% + 8px)',
+                                    right: 0,
+                                    minWidth: '220px',
+                                    maxHeight: '320px',
+                                    overflowY: 'auto',
+                                    background: 'var(--color-bg-secondary)',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: '10px',
+                                    boxShadow: 'var(--shadow-card)',
+                                    padding: '10px',
+                                    zIndex: 20,
+                                }}
+                            >
+                                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '8px' }}>
+                                    Görünecek sütunları seçin
+                                </div>
+                                <div style={{ display: 'grid', gap: '6px' }}>
+                                    {columns.map((column) => {
+                                        const checked = visibleColumnKeys.includes(column.key);
+                                        const disabled = checked && !canHideColumn;
+
+                                        return (
+                                            <label
+                                                key={column.key}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    fontSize: '13px',
+                                                    color: disabled ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+                                                    cursor: disabled ? 'not-allowed' : 'pointer',
+                                                }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    disabled={disabled}
+                                                    onChange={() => toggleColumnVisibility(column.key)}
+                                                />
+                                                <span>{column.label}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <button
                         onClick={exportToCSV}
                         style={{
@@ -308,7 +418,7 @@ export default function DataTable({
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
                     <thead style={{ background: 'var(--color-bg-tertiary)' }}>
                         <tr>
-                            {columns.map(col => (
+                            {visibleColumns.map(col => (
                                 <th 
                                     key={col.key} 
                                     onClick={() => col.sortable !== false && handleSort(col.key)}
@@ -334,7 +444,7 @@ export default function DataTable({
                     <tbody>
                         {paginatedData.length > 0 ? paginatedData.map((row, i) => (
                             <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                                {columns.map(col => (
+                                {visibleColumns.map(col => (
                                     <td key={col.key} style={{ padding: '12px 24px', color: 'var(--color-text-primary)' }}>
                                         {renderFallbackHint(col.formatter ? col.formatter(row[col.key], row) : row[col.key])}
                                     </td>
@@ -342,7 +452,7 @@ export default function DataTable({
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={columns.length} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                <td colSpan={visibleColumns.length} style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
                                     <EmptyState compact message="Aramanıza/filtrenize uygun tablo verisi bulunamadı." />
                                 </td>
                             </tr>

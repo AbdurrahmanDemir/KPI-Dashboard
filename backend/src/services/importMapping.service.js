@@ -103,6 +103,44 @@ const SOURCE_FIELDS = {
         'conversion_value',
         'currency'
     ],
+    campaigns: [
+        'campaign_name',
+        'platform',
+        'platform_id',
+        'campaign_type',
+        'objective',
+        'start_date',
+        'end_date',
+        'daily_budget',
+        'total_budget',
+        'budget',
+        'budget_type',
+        'target_audience',
+        'target_roas',
+        'currency',
+        'status'
+    ],
+    channel_mapping: [
+        'source',
+        'medium',
+        'channel_group',
+        'platform',
+        'is_paid'
+    ],
+    customers: [
+        'customer_id',
+        'customer_name',
+        'first_order_date',
+        'registration_date',
+        'city',
+        'gender',
+        'age_group',
+        'registration_source',
+        'is_newsletter_subscriber',
+        'total_orders',
+        'total_revenue',
+        'last_order_date'
+    ],
     funnel: ['date', 'channel', 'device', 'step_name', 'step_order', 'session_count']
 };
 
@@ -211,6 +249,44 @@ const FIELD_ALIASES = {
         conversion_value: ['conversion_value', 'metrics.conversions_value'],
         currency: ['currency']
     },
+    campaigns: {
+        campaign_name: ['campaign_name', 'campaign.name', 'campaign'],
+        platform: ['platform', 'source_platform'],
+        platform_id: ['platform_id', 'campaign_id', 'campaign.id'],
+        campaign_type: ['campaign_type', 'type'],
+        objective: ['objective', 'campaign_objective'],
+        start_date: ['start_date', 'start'],
+        end_date: ['end_date', 'end'],
+        daily_budget: ['daily_budget'],
+        total_budget: ['total_budget', 'lifetime_budget'],
+        budget: ['budget'],
+        budget_type: ['budget_type'],
+        target_audience: ['target_audience', 'audience'],
+        target_roas: ['target_roas'],
+        currency: ['currency'],
+        status: ['status']
+    },
+    channel_mapping: {
+        source: ['source', 'session_source'],
+        medium: ['medium', 'session_medium'],
+        channel_group: ['channel_group', 'default_channel_group', 'sessiondefaultchannelgroup'],
+        platform: ['platform'],
+        is_paid: ['is_paid', 'paid']
+    },
+    customers: {
+        customer_id: ['customer_id', 'customer.id', 'musteri_id'],
+        customer_name: ['customer_name', 'name', 'full_name', 'musteri_adi'],
+        first_order_date: ['first_order_date'],
+        registration_date: ['registration_date', 'registered_at'],
+        city: ['city', 'sehir'],
+        gender: ['gender'],
+        age_group: ['age_group'],
+        registration_source: ['registration_source', 'source'],
+        is_newsletter_subscriber: ['is_newsletter_subscriber', 'newsletter'],
+        total_orders: ['total_orders', 'orders'],
+        total_revenue: ['total_revenue', 'revenue'],
+        last_order_date: ['last_order_date']
+    },
     funnel: {
         date: ['date'],
         channel: ['channel', 'sessiondefaultchannelgroup'],
@@ -228,6 +304,9 @@ const REQUIRED_FIELDS = {
     ga4_items: ['date', 'product_sku', 'items_viewed'],
     meta_ads: ['date', 'campaign_name', 'impressions', 'clicks', 'spend'],
     google_ads: ['date', 'campaign_name', 'impressions', 'clicks', 'spend'],
+    campaigns: ['campaign_name', 'platform', 'start_date'],
+    channel_mapping: ['source', 'medium', 'channel_group'],
+    customers: ['customer_id'],
     funnel: ['date', 'channel', 'step_name', 'step_order', 'session_count']
 };
 

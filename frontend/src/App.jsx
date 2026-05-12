@@ -12,6 +12,7 @@ const MarketingAnalysisPage = lazy(() => import('./pages/MarketingAnalysisPage')
 const SalesAnalysisPage = lazy(() => import('./pages/SalesAnalysisPage'));
 const ChannelAnalysisPage = lazy(() => import('./pages/ChannelAnalysisPage'));
 const CampaignAnalysisPage = lazy(() => import('./pages/CampaignAnalysisPage'));
+const UtmAnalysisPage = lazy(() => import('./pages/UtmAnalysisPage'));
 const TrafficAnalysisPage = lazy(() => import('./pages/TrafficAnalysisPage'));
 const FunnelAnalysisPage = lazy(() => import('./pages/FunnelAnalysisPage'));
 const CohortAnalysisPage = lazy(() => import('./pages/CohortAnalysisPage'));
@@ -53,6 +54,7 @@ function App() {
           <Route path="/sales" element={<ProtectedRoute><SalesAnalysisPage /></ProtectedRoute>} />
           <Route path="/channels" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager', 'viewer']}><ChannelAnalysisPage /></ProtectedRoute>} />
           <Route path="/campaigns" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager', 'viewer']}><CampaignAnalysisPage /></ProtectedRoute>} />
+          <Route path="/utm" element={<ProtectedRoute allowedRoles={['admin', 'marketing_manager', 'viewer']}><UtmAnalysisPage /></ProtectedRoute>} />
           <Route path="/traffic" element={<ProtectedRoute><TrafficAnalysisPage /></ProtectedRoute>} />
           <Route path="/funnel" element={<ProtectedRoute><FunnelAnalysisPage /></ProtectedRoute>} />
           <Route path="/cohort" element={<ProtectedRoute><CohortAnalysisPage /></ProtectedRoute>} />

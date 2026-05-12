@@ -19,6 +19,9 @@ const SOURCE_LABEL = {
     ga4_items:        'GA4 Ürün Etkileşimleri',
     meta_ads:         'Meta Ads',
     google_ads:       'Google Ads',
+    campaigns:        'Kampanya Kayıtları',
+    channel_mapping:  'Kanal Eşleştirme',
+    customers:        'Müşteri Verisi',
     funnel:           'Funnel Verisi',
 };
 
@@ -177,9 +180,6 @@ const ImportHistory = ({ onRefresh }) => {
             showToast(res.data.data.message || 'Kalıntı veriler başarıyla temizlendi.');
             fetchImports(page);
             if (onRefresh) onRefresh();
-            setMessage(`Dosya yüklendi. Veri kaynağı otomatik olarak "${SOURCE_LABEL[detectedSourceType] || detectedSourceType}" olarak algılandı.`);
-            setMessage(`Dosya yüklendi. Veri kaynağı otomatik olarak "${SOURCE_LABEL[detectedSourceType] || detectedSourceType}" olarak algılandı.`);
-            setTimeout(() => setMessage(`Dosya yüklendi. Veri kaynağı otomatik olarak "${SOURCE_LABEL[detectedSourceType] || detectedSourceType}" olarak algılandı.`), 0);
         } catch (err) {
             showToast(err.response?.data?.error?.message || 'Kalıntılar temizlenemedi.', 'error');
             setLoading(false);
@@ -403,6 +403,9 @@ export default function ImportPage() {
         { value: 'ga4_items', label: 'GA4 Ürün Etkileşimleri' },
         { value: 'meta_ads', label: 'Meta Ads' },
         { value: 'google_ads', label: 'Google Ads' },
+        { value: 'campaigns', label: 'Kampanya Kayıtları' },
+        { value: 'channel_mapping', label: 'Kanal Eşleştirme' },
+        { value: 'customers', label: 'Müşteri Verisi' },
         { value: 'funnel', label: 'Funnel Verisi' },
     ];
 
@@ -413,6 +416,9 @@ export default function ImportPage() {
         ga4_items: ['date', 'product_sku', 'product_name', 'product_category', 'product_category2', 'product_brand', 'items_viewed', 'items_added_to_cart', 'items_checked_out', 'items_purchased', 'item_revenue', 'item_list_views', 'item_list_clicks', 'cart_to_view_rate'],
         meta_ads: ['date', 'campaign_name', 'platform_id', 'adset', 'ad_name', 'impressions', 'clicks', 'reach', 'spend', 'ctr', 'cpc', 'conversions', 'conversion_value', 'currency'],
         google_ads: ['date', 'campaign_name', 'platform_id', 'ad_group', 'ad_name', 'impressions', 'clicks', 'reach', 'spend', 'ctr', 'cpc', 'conversions', 'conversion_value', 'currency'],
+        campaigns: ['campaign_name', 'platform', 'platform_id', 'campaign_type', 'objective', 'start_date', 'end_date', 'daily_budget', 'total_budget', 'budget', 'budget_type', 'target_audience', 'target_roas', 'currency', 'status'],
+        channel_mapping: ['source', 'medium', 'channel_group', 'platform', 'is_paid'],
+        customers: ['customer_id', 'customer_name', 'first_order_date', 'registration_date', 'city', 'gender', 'age_group', 'registration_source', 'is_newsletter_subscriber', 'total_orders', 'total_revenue', 'last_order_date'],
         funnel: ['date', 'channel', 'device', 'step_name', 'step_order', 'session_count'],
     };
 
@@ -641,7 +647,7 @@ export default function ImportPage() {
                             <div style={{ marginBottom: '24px', padding: '14px 16px', background: 'rgba(99,102,241,0.06)', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.2)', color: 'var(--color-text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
                                 Dosya başlıklarına bakılarak veri kaynağı otomatik algılanır.
                                 <br />
-                                Desteklenen kaynaklar: Satış, Sipariş Kalemleri, Google Analytics, GA4 Ürün, Meta Ads, Google Ads ve Funnel.
+                                Desteklenen kaynaklar: Satış, Sipariş Kalemleri, Google Analytics, GA4 Ürün, Meta Ads, Google Ads, Kampanya, Kanal Eşleştirme, Müşteri ve Funnel.
                             </div>
                             <div style={{ display: 'none' }}>
                                 <label style={{ fontSize: '14px', fontWeight: 600 }}>Veri Kaynağı Seçin</label>

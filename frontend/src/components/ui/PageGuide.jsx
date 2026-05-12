@@ -124,6 +124,31 @@ const guides = {
             }
         ]
     },
+    '/utm': {
+        key: 'utm',
+        title: 'UTM Analizi Rehberi',
+        intro: 'Bu modül mevcut pazarlama ve satış analizlerinden bağımsızdır. Burada kendi UTM linklerinizi üretir, test eder ve sadece bu linklerden gelen etkinlikleri analiz edersiniz.',
+        sections: [
+            {
+                title: 'Bu sayfada ne var?',
+                items: [
+                    'UTM oluşturucu ile source, medium, campaign, content ve term bilgileriyle yeni takip linki üretirsiniz.',
+                    'Takip linki tıklamayı kaydeder ve hedef URL\'ye UTM parametrelerini ekleyerek yönlendirir.',
+                    'Test ve validasyon alanı yalnızca bu modül için örnek tıklama, lead ve satış verisi üretir.',
+                    'Grafik ve tablolar sadece UTM linklerinden toplanan etkinlikleri gösterir.'
+                ]
+            },
+            {
+                title: 'Nasıl kullanılır?',
+                items: [
+                    'Önce yeni bir UTM linki oluşturun ve reklam ya da kampanya alanında bu takip linkini kullanın.',
+                    'İsterseniz test butonlarıyla modüle örnek veri ekleyip grafiklerin çalışmasını hemen doğrulayın.',
+                    'Aynı ekranda iki UTM linki seçerek tıklama, lead, satış ve gelir farklarını karşılaştırın.',
+                    'Bu modül genel dashboard filtrelerinden bağımsız çalıştığı için mevcut satış ve pazarlama analizleriyle karışmaz.'
+                ]
+            }
+        ]
+    },
     '/traffic': {
         key: 'traffic',
         title: 'Trafik Analizi Rehberi',

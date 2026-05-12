@@ -7,6 +7,7 @@ const {
     FunnelData,
     AdsData,
     CampaignData,
+    CustomerData,
     Integration,
 } = require('../models');
 
@@ -18,6 +19,9 @@ const MANUAL_SOURCE_LABELS = {
     funnel: 'Funnel Verisi',
     order_items: 'Siparis Kalemleri',
     ga4_items: 'GA4 Urun Etkilesimleri',
+    campaigns: 'Kampanya Kayitlari',
+    channel_mapping: 'Kanal Eslesmeleri',
+    customers: 'Musteri Verisi',
 };
 
 const PLATFORM_LABELS = {
@@ -56,6 +60,7 @@ const getDataSummary = async (req, res) => {
             manualAdsStats,
             apiAdsStats,
             campaignStats,
+            customerStats,
             manualSourcesRaw,
             integrationsRaw,
         ] = await Promise.all([
@@ -72,6 +77,7 @@ const getDataSummary = async (req, res) => {
             getDatasetStat(AdsData, 'Reklam Verisi (Manuel Import)', { import_id: { [Op.ne]: null } }, 'created_at'),
             getDatasetStat(AdsData, 'Reklam Verisi (API / Test)', { import_id: null }, 'created_at'),
             getDatasetStat(CampaignData, 'Kampanya Kayitlari (API)', {}, 'updated_at'),
+            getDatasetStat(CustomerData, 'Musteri Verisi', {}, 'created_at'),
             ImportLog.findAll({
                 attributes: ['source_type', 'status', 'row_count', 'error_count', 'created_at'],
                 order: [['created_at', 'DESC']],
@@ -147,6 +153,7 @@ const getDataSummary = async (req, res) => {
             { key: 'ads_manual', source: 'manual', ...manualAdsStats },
             { key: 'ads_api', source: 'api', ...apiAdsStats },
             { key: 'campaigns_api', source: 'api', ...campaignStats },
+            { key: 'customers', source: 'manual', ...customerStats },
         ];
 
         const manualRecords = datasets

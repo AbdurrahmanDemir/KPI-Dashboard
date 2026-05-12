@@ -29,7 +29,10 @@ const ImportLog = sequelize.define(
                 'sales',
                 'funnel',
                 'order_items',
-                'ga4_items'
+                'ga4_items',
+                'campaigns',
+                'channel_mapping',
+                'customers'
             ),
             allowNull: false,
         },

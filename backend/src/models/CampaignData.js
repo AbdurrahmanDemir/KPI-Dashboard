@@ -56,6 +56,14 @@ const CampaignData = sequelize.define(
             allowNull: false,
             defaultValue: 'active',
         },
+        raw_payload: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
+        import_id: {
+            type: DataTypes.INTEGER.UNSIGNED,
+            allowNull: true,
+        },
     },
     {
         tableName: 'campaign_data',

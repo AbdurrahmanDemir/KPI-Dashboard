@@ -30,6 +30,14 @@ const ChannelMapping = sequelize.define(
             allowNull: false,
             defaultValue: false,
         },
+        raw_payload: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
+        import_id: {
+            type: DataTypes.INTEGER.UNSIGNED,
+            allowNull: true,
+        },
     },
     {
         tableName: 'channel_mapping',

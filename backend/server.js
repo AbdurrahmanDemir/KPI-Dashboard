@@ -84,6 +84,7 @@ app.use('/api/report-schedules', require('./src/routes/reportSchedule.routes'));
 app.use('/api/logs', require('./src/routes/log.routes'));
 app.use('/api/integrations', require('./src/routes/integration.routes'));
 app.use('/api/data', require('./src/routes/data.routes'));
+app.use('/api/utm', require('./src/routes/utm.routes'));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
