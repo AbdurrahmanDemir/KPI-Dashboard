@@ -3,6 +3,7 @@ const TrafficData = require('../models/TrafficData');
 const AdsData = require('../models/AdsData');
 const SalesData = require('../models/SalesData');
 const { buildAttributionInsight } = require('./insight.service');
+const { allocateAdRowsBySalesShare } = require('./adSpendAllocation.service');
 
 const round = (value, digits = 2) => Number(Number(value || 0).toFixed(digits));
 
@@ -127,7 +128,8 @@ const getAdsRows = async (filters) => {
         raw: true
     });
 
-    return rows.filter((row) => matchesChannelFilter(row.platform, filters.channel));
+    const channelRows = rows.filter((row) => matchesChannelFilter(row.platform, filters.channel));
+    return allocateAdRowsBySalesShare(channelRows, filters);
 };
 
 const getSalesRows = async (filters, completedOnly = false) => {
@@ -342,12 +344,12 @@ const getAdsKPIs = async (filters) => {
 
     return {
         spend: round(totals.spend),
-        impressions: totals.impressions,
-        clicks: totals.clicks,
+        impressions: Math.round(totals.impressions),
+        clicks: Math.round(totals.clicks),
         ctr: round(totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0),
         cpc: round(totals.clicks > 0 ? totals.spend / totals.clicks : 0),
         cpm: round(totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0),
-        conversions: totals.conversions,
+        conversions: round(totals.conversions),
         cost_per_conversion: round(totals.conversions > 0 ? totals.spend / totals.conversions : 0),
         roas: round(totals.spend > 0 ? totals.conversion_value / totals.spend : 0),
         frequency: round(totals.reach > 0 ? totals.impressions / totals.reach : 0)

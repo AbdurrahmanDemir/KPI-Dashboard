@@ -4,6 +4,7 @@ const TrafficData = require('../models/TrafficData');
 const AdsData = require('../models/AdsData');
 const SalesData = require('../models/SalesData');
 const { buildAttributionInsight } = require('./insight.service');
+const { allocateAdRowsBySalesShare } = require('./adSpendAllocation.service');
 
 const round = (value, digits = 2) => Number(Number(value || 0).toFixed(digits));
 const KNOWN_BRANDS = [
@@ -119,11 +120,12 @@ const getChannelPerformance = async (filters) => {
 };
 
 const getPlatformPerformance = async (filters) => {
-    const rows = await AdsData.findAll({
+    const rawRows = await AdsData.findAll({
         where: buildDateWhere(filters),
         attributes: ['platform', 'spend', 'impressions', 'clicks', 'conversions', 'conversion_value', 'campaign_name'],
         raw: true
     });
+    const rows = await allocateAdRowsBySalesShare(rawRows, filters);
 
     const grouped = rows.reduce((acc, row) => {
         if (filters.platform && row.platform !== filters.platform) return acc;
@@ -148,7 +150,7 @@ const getPlatformPerformance = async (filters) => {
 };
 
 const getCampaignPerformance = async (filters) => {
-    const [adRows, salesRows, trafficRows] = await Promise.all([
+    const [rawAdRows, salesRows, trafficRows] = await Promise.all([
         AdsData.findAll({
             where: {
                 ...buildDateWhere(filters),
@@ -182,6 +184,8 @@ const getCampaignPerformance = async (filters) => {
             raw: true
         })
     ]);
+
+    const adRows = await allocateAdRowsBySalesShare(rawAdRows, filters);
 
     const grouped = {};
 
@@ -268,7 +272,7 @@ const getCampaignPerformance = async (filters) => {
 };
 
 const getCampaignProductPerformance = async (filters) => {
-    const [adRows, salesRows] = await Promise.all([
+    const [rawAdRows, salesRows] = await Promise.all([
         AdsData.findAll({
             where: {
                 ...buildDateWhere(filters),
@@ -292,6 +296,8 @@ const getCampaignProductPerformance = async (filters) => {
             raw: true
         })
     ]);
+
+    const adRows = await allocateAdRowsBySalesShare(rawAdRows, filters);
 
     const spendByCampaign = adRows.reduce((acc, row) => {
         if (!matchesChannel(row.platform, filters.channel)) return acc;
@@ -540,7 +546,7 @@ const getSalesDimensionPerformance = async (filters) => {
 };
 
 const getAttributionAnalysis = async (filters) => {
-    const [trafficRows, adRows, salesRows] = await Promise.all([
+    const [trafficRows, rawAdRows, salesRows] = await Promise.all([
         TrafficData.findAll({
             where: {
                 ...buildDateWhere(filters),
@@ -574,6 +580,8 @@ const getAttributionAnalysis = async (filters) => {
             raw: true
         })
     ]);
+
+    const adRows = await allocateAdRowsBySalesShare(rawAdRows, filters);
 
     const grouped = {};
 

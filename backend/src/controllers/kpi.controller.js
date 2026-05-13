@@ -15,7 +15,7 @@ const { successResponse, errorResponse } = require('../utils/response');
 const crypto = require('crypto');
 const KpiCache = require('../models/KpiCache');
 const { Op } = require('sequelize');
-const KPI_CACHE_SCHEMA_VERSION = 'v2';
+const KPI_CACHE_SCHEMA_VERSION = 'v3';
 
 // ─── GET /kpi/summary ──────────────────────────────────────────────────────────
 const getSummary = async (req, res) => {
