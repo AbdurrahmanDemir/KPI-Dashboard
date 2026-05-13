@@ -14,8 +14,8 @@ const options = {
         },
         servers: [
             {
-                url: `http://localhost:${process.env.PORT || 3001}`,
-                description: 'Development server',
+                url: process.env.PUBLIC_BACKEND_URL || `http://localhost:${process.env.PORT || 3001}`,
+                description: process.env.PUBLIC_BACKEND_URL ? 'Production server' : 'Development server',
             },
         ],
         components: {

@@ -17,6 +17,7 @@ const { startReportScheduler } = require('./src/services/reportScheduler.service
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const publicServerUrl = process.env.PUBLIC_BACKEND_URL || `http://localhost:${PORT}`;
 
 // ─── Güvenlik Middleware'leri ─────────────────────────────────────────────────
 app.use(helmet());
@@ -105,8 +106,8 @@ app.get('/', (req, res) => {
         success: true,
         data: {
             message: 'KPI Dashboard API çalışıyor 🚀',
-            docs: `http://localhost:${PORT}/api-docs`,
-            health: `http://localhost:${PORT}/health`,
+            docs: `${publicServerUrl}/api-docs`,
+            health: `${publicServerUrl}/health`,
         },
     });
 });
@@ -121,9 +122,9 @@ const startServer = async () => {
     startReportScheduler();
     app.listen(PORT, () => {
         console.log(`\n🚀 KPI Dashboard API çalışıyor`);
-        console.log(`   ├── Server:  http://localhost:${PORT}`);
-        console.log(`   ├── Swagger: http://localhost:${PORT}/api-docs`);
-        console.log(`   ├── Health:  http://localhost:${PORT}/health`);
+        console.log(`   ├── Server:  ${publicServerUrl}`);
+        console.log(`   ├── Swagger: ${publicServerUrl}/api-docs`);
+        console.log(`   ├── Health:  ${publicServerUrl}/health`);
         console.log(`   └── ENV:     ${process.env.NODE_ENV}\n`);
     });
 };
