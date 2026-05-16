@@ -39,6 +39,7 @@ const resolveTargetModel = (sourceType) => {
 
 const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData, CampaignData, ChannelMapping, CustomerData, ImportRawRow, ImportStagingRow];
 const MAX_STORED_IMPORT_ERRORS = 500;
+const SYNTHETIC_IMPORT_ID_PREFIX = 'synthetic-';
 
 const toNumber = (value) => {
     if (value === null || value === undefined || value === '') return null;
@@ -539,14 +540,184 @@ const findDatabaseDuplicate = async (sourceType, record) => {
     return null;
 };
 
+const findDatabaseDuplicatesBatch = async (sourceType, pipelineRows) => {
+    const duplicateMap = new Map();
+    const validRows = pipelineRows.filter((row) => row.is_valid);
+
+    if (validRows.length === 0) {
+        return duplicateMap;
+    }
+
+    const attachDuplicate = (rowNumber, field = 'duplicate', message = 'Ayni veri veritabaninda zaten mevcut.') => {
+        const current = duplicateMap.get(rowNumber) || [];
+        current.push({ field, message });
+        duplicateMap.set(rowNumber, current);
+    };
+
+    if (sourceType === 'sales' || sourceType === 'order_items') {
+        const orderIdToRows = new Map();
+        for (const row of validRows) {
+            const orderId = row.normalized.order_id;
+            if (!orderId) continue;
+            const current = orderIdToRows.get(orderId) || [];
+            current.push(row.row_number);
+            orderIdToRows.set(orderId, current);
+        }
+
+        const orderIds = Array.from(orderIdToRows.keys());
+        if (orderIds.length > 0) {
+            const existingRows = await SalesData.findAll({
+                where: { order_id: { [Op.in]: orderIds } },
+                attributes: ['order_id'],
+                raw: true,
+            });
+
+            for (const existing of existingRows) {
+                for (const rowNumber of orderIdToRows.get(existing.order_id) || []) {
+                    attachDuplicate(rowNumber, 'order_id', 'Bu siparis kaydi veritabaninda zaten mevcut.');
+                }
+            }
+        }
+    }
+
+    if (sourceType === 'customers') {
+        const customerIdToRows = new Map();
+        for (const row of validRows) {
+            const customerId = row.normalized.customer_id;
+            if (!customerId) continue;
+            const current = customerIdToRows.get(customerId) || [];
+            current.push(row.row_number);
+            customerIdToRows.set(customerId, current);
+        }
+
+        const customerIds = Array.from(customerIdToRows.keys());
+        if (customerIds.length > 0) {
+            const existingRows = await CustomerData.findAll({
+                where: { customer_id: { [Op.in]: customerIds } },
+                attributes: ['customer_id'],
+                raw: true,
+            });
+
+            for (const existing of existingRows) {
+                for (const rowNumber of customerIdToRows.get(existing.customer_id) || []) {
+                    attachDuplicate(rowNumber, 'customer_id', 'Bu musteri kaydi veritabaninda zaten mevcut.');
+                }
+            }
+        }
+    }
+
+    if (sourceType === 'channel_mapping') {
+        const pairToRows = new Map();
+        const sources = new Set();
+        const mediums = new Set();
+
+        for (const row of validRows) {
+            const source = row.normalized.source || '(direct)';
+            const medium = row.normalized.medium || '(none)';
+            const key = `${source}::${medium}`;
+            const current = pairToRows.get(key) || [];
+            current.push(row.row_number);
+            pairToRows.set(key, current);
+            sources.add(source);
+            mediums.add(medium);
+        }
+
+        if (pairToRows.size > 0) {
+            const existingRows = await ChannelMapping.findAll({
+                where: {
+                    source: { [Op.in]: Array.from(sources) },
+                    medium: { [Op.in]: Array.from(mediums) },
+                },
+                attributes: ['source', 'medium'],
+                raw: true,
+            });
+
+            for (const existing of existingRows) {
+                const key = `${existing.source || '(direct)'}::${existing.medium || '(none)'}`;
+                for (const rowNumber of pairToRows.get(key) || []) {
+                    attachDuplicate(rowNumber, 'source', 'Bu kanal eslestirmesi veritabaninda zaten mevcut.');
+                }
+            }
+        }
+    }
+
+    if (sourceType === 'campaigns') {
+        const platforms = new Set();
+        const campaignNames = new Set();
+        const pairToRows = new Map();
+
+        for (const row of validRows) {
+            const platform = row.normalized.platform;
+            const campaignName = row.normalized.campaign_name;
+            if (!platform || !campaignName) continue;
+            const key = `${platform}::${campaignName}`;
+            const current = pairToRows.get(key) || [];
+            current.push(row.row_number);
+            pairToRows.set(key, current);
+            platforms.add(platform);
+            campaignNames.add(campaignName);
+        }
+
+        if (pairToRows.size > 0) {
+            const existingRows = await CampaignData.findAll({
+                where: {
+                    platform: { [Op.in]: Array.from(platforms) },
+                    campaign_name: { [Op.in]: Array.from(campaignNames) },
+                },
+                attributes: ['platform', 'campaign_name'],
+                raw: true,
+            });
+
+            for (const existing of existingRows) {
+                const key = `${existing.platform}::${existing.campaign_name}`;
+                for (const rowNumber of pairToRows.get(key) || []) {
+                    attachDuplicate(rowNumber, 'campaign_name', 'Bu kampanya kaydi veritabaninda zaten mevcut.');
+                }
+            }
+        }
+    }
+
+    if (sourceType === 'meta_ads' || sourceType === 'google_ads') {
+        const platformIdToRows = new Map();
+
+        for (const row of validRows) {
+            const platformId = row.normalized.platform_id;
+            if (!platformId) continue;
+            const key = `${row.normalized.platform}::${platformId}`;
+            const current = platformIdToRows.get(key) || [];
+            current.push(row.row_number);
+            platformIdToRows.set(key, current);
+        }
+
+        const platformIds = Array.from(new Set(validRows.map((row) => row.normalized.platform_id).filter(Boolean)));
+        if (platformIds.length > 0) {
+            const existingRows = await AdsData.findAll({
+                where: {
+                    platform: sourceType === 'meta_ads' ? 'meta' : 'google_ads',
+                    platform_id: { [Op.in]: platformIds },
+                },
+                attributes: ['platform', 'platform_id'],
+                raw: true,
+            });
+
+            for (const existing of existingRows) {
+                const key = `${existing.platform}::${existing.platform_id}`;
+                for (const rowNumber of platformIdToRows.get(key) || []) {
+                    attachDuplicate(rowNumber, 'platform_id', 'Bu reklam kaydi veritabaninda zaten mevcut.');
+                }
+            }
+        }
+    }
+
+    return duplicateMap;
+};
+
 // analyzeImport: sadece dosya icindeki dogrulama ve duplicate kontrolu yapar.
 // DB'ye seri sorgu atilmaz — N+1 sorgu felaketi onlenmistir.
 const analyzeImport = async (importLog) => {
     const rows = await parseImportFile(importLog);
     const records = buildNormalizedRecords(rows, importLog);
     const seen = new Set();
-    const validRecords = [];
-    const errors = [];
     const pipelineRows = [];
     const targetTable = getTargetTableName(importLog.source_type);
 
@@ -562,29 +733,36 @@ const analyzeImport = async (importLog) => {
             seen.add(duplicateKey);
         }
 
-        if (rowErrors.length > 0) {
-            errors.push({
-                row_number: item.row_number,
-                raw: item.raw,
-                details: rowErrors
-            });
-            pipelineRows.push({
-                row_number: item.row_number,
-                raw: item.raw,
-                normalized: item.normalized,
-                validation_errors: rowErrors,
-                is_valid: false,
-                target_table: targetTable
-            });
+        pipelineRows.push({
+            row_number: item.row_number,
+            raw: item.raw,
+            normalized: item.normalized,
+            validation_errors: rowErrors,
+            is_valid: rowErrors.length === 0,
+            target_table: targetTable
+        });
+    }
+
+    const dbDuplicates = await findDatabaseDuplicatesBatch(importLog.source_type, pipelineRows);
+
+    for (const row of pipelineRows) {
+        const duplicateErrors = dbDuplicates.get(row.row_number);
+        if (!duplicateErrors || duplicateErrors.length === 0) continue;
+        row.validation_errors.push(...duplicateErrors);
+        row.is_valid = false;
+    }
+
+    const validRecords = [];
+    const errors = [];
+
+    for (const row of pipelineRows) {
+        if (row.is_valid) {
+            validRecords.push(row.normalized);
         } else {
-            validRecords.push(item.normalized);
-            pipelineRows.push({
-                row_number: item.row_number,
-                raw: item.raw,
-                normalized: item.normalized,
-                validation_errors: [],
-                is_valid: true,
-                target_table: targetTable
+            errors.push({
+                row_number: row.row_number,
+                raw: row.raw,
+                details: row.validation_errors
             });
         }
     }
@@ -648,20 +826,73 @@ const writeAudit = async (req, action, entityId, payload = {}) => {
     }
 };
 
+const buildSyntheticImportEntries = async (userIdFilter = null) => {
+    const syntheticSources = [
+        { source_type: 'sales', file_type: 'db', model: SalesData },
+        { source_type: 'google_analytics', file_type: 'db', model: TrafficData },
+        { source_type: 'customers', file_type: 'db', model: CustomerData },
+        { source_type: 'funnel', file_type: 'db', model: FunnelData },
+    ];
+
+    const userWhere = userIdFilter ? { user_id: userIdFilter } : {};
+    const importLogs = await ImportLog.findAll({
+        attributes: ['source_type'],
+        where: userWhere,
+        raw: true,
+    });
+    const existingSourceTypes = new Set(importLogs.map((row) => row.source_type));
+
+    const syntheticEntries = [];
+
+    for (const source of syntheticSources) {
+        if (existingSourceTypes.has(source.source_type)) continue;
+
+        const [rowCount, lastUpdatedAt] = await Promise.all([
+            source.model.count(),
+            source.model.max('created_at'),
+        ]);
+
+        if (!rowCount) continue;
+
+        syntheticEntries.push({
+            id: `${SYNTHETIC_IMPORT_ID_PREFIX}${source.source_type}`,
+            user_id: userIdFilter || null,
+            file_name: 'legacy-database-record',
+            file_type: source.file_type,
+            source_type: source.source_type,
+            row_count: rowCount,
+            error_count: 0,
+            status: 'completed',
+            created_at: lastUpdatedAt || new Date().toISOString(),
+            completed_at: lastUpdatedAt || new Date().toISOString(),
+            synthetic: true,
+            can_delete: false,
+        });
+    }
+
+    return syntheticEntries;
+};
+
 const listImports = async (req, res) => {
     try {
         const page = parseInt(req.query.page || '1', 10);
         const limit = parseInt(req.query.limit || '20', 10);
         const where = req.user.role === 'admin' ? {} : { user_id: req.user.id };
 
-        const { count, rows } = await ImportLog.findAndCountAll({
+        const rows = await ImportLog.findAll({
             where,
             order: [['created_at', 'DESC']],
-            limit,
-            offset: (page - 1) * limit
+            raw: true,
         });
 
-        return paginatedResponse(res, rows, page, limit, count);
+        const syntheticRows = await buildSyntheticImportEntries(req.user.role === 'admin' ? null : req.user.id);
+        const combinedRows = [...rows, ...syntheticRows]
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        const total = combinedRows.length;
+        const pagedRows = combinedRows.slice((page - 1) * limit, page * limit);
+
+        return paginatedResponse(res, pagedRows, page, limit, total);
     } catch (err) {
         return errorResponse(res, 500, 'INTERNAL_ERROR', 'Import listesi getirilemedi.');
     }

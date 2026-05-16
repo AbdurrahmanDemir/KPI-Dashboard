@@ -31,6 +31,23 @@ const PLATFORM_LABELS = {
 
 const toNumber = (value) => Number(value || 0);
 
+const ensureManualSourceSummary = (map, sourceType, rowCount, lastImportAt) => {
+    if (!rowCount || map.has(sourceType)) return;
+
+    map.set(sourceType, {
+        key: sourceType,
+        label: MANUAL_SOURCE_LABELS[sourceType] || sourceType,
+        import_count: 1,
+        completed_count: 1,
+        failed_count: 0,
+        pending_count: 0,
+        row_count: rowCount,
+        error_count: 0,
+        last_import_at: lastImportAt,
+        synthetic: true,
+    });
+};
+
 const getDatasetStat = async (model, label, where = {}, latestField = 'created_at') => {
     const [records, lastUpdatedAt] = await Promise.all([
         model.count({ where }),
@@ -118,6 +135,12 @@ const getDataSummary = async (req, res) => {
 
             manualSourcesMap.set(row.source_type, current);
         }
+
+        ensureManualSourceSummary(manualSourcesMap, 'sales', salesStats.records, salesStats.last_updated_at);
+        ensureManualSourceSummary(manualSourcesMap, 'google_analytics', trafficStats.records, trafficStats.last_updated_at);
+        ensureManualSourceSummary(manualSourcesMap, 'customers', customerStats.records, customerStats.last_updated_at);
+        ensureManualSourceSummary(manualSourcesMap, 'funnel', funnelStats.records, funnelStats.last_updated_at);
+        ensureManualSourceSummary(manualSourcesMap, 'google_ads', manualAdsStats.records, manualAdsStats.last_updated_at);
 
         const apiSources = await Promise.all(
             integrationsRaw.map(async (integration) => {

@@ -157,6 +157,11 @@ const ImportHistory = ({ onRefresh }) => {
 
     const handleDeleteConfirm = async () => {
         if (!deleteTarget) return;
+        if (deleteTarget.can_delete === false) {
+            showToast('Bu kayıt veritabanındaki mevcut verilerden türetilmiş bilgi amaçlı bir kayıttır ve silinemez.', 'error');
+            setDeleteTarget(null);
+            return;
+        }
         setDeleting(true);
         try {
             await api.delete(`/imports/${deleteTarget.id}`);
@@ -324,22 +329,39 @@ const ImportHistory = ({ onRefresh }) => {
                                         </td>
                                         <td style={{ padding: '14px 16px', color: 'var(--color-text-secondary)', fontSize: '13px', whiteSpace: 'nowrap' }}>
                                             {new Date(imp.created_at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
+                                            {imp.synthetic && (
+                                                <span style={{ display: 'inline-block', marginLeft: '8px', padding: '2px 6px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, color: '#2563eb', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.22)' }}>
+                                                    mevcut veri
+                                                </span>
+                                            )}
                                         </td>
                                         <td style={{ padding: '14px 16px' }}>
                                             <button
-                                                onClick={() => setDeleteTarget(imp)}
-                                                title="Bu import kaydını ve verilerini sil"
+                                                onClick={() => imp.can_delete !== false && setDeleteTarget(imp)}
+                                                title={imp.can_delete === false ? 'Bu satır mevcut veritabanı kayıtlarından türetilmiştir; silme işlemi desteklenmez.' : 'Bu import kaydını ve verilerini sil'}
                                                 style={{
                                                     padding: '7px 14px', borderRadius: '8px',
-                                                    background: 'rgba(239,68,68,0.08)', color: '#ef4444',
-                                                    border: '1px solid rgba(239,68,68,0.25)', cursor: 'pointer',
+                                                    background: imp.can_delete === false ? 'rgba(107,114,128,0.08)' : 'rgba(239,68,68,0.08)',
+                                                    color: imp.can_delete === false ? '#6b7280' : '#ef4444',
+                                                    border: imp.can_delete === false ? '1px solid rgba(107,114,128,0.25)' : '1px solid rgba(239,68,68,0.25)',
+                                                    cursor: imp.can_delete === false ? 'not-allowed' : 'pointer',
                                                     fontWeight: 600, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px',
                                                     transition: 'all 0.2s',
+                                                    opacity: imp.can_delete === false ? 0.7 : 1,
                                                 }}
-                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; e.currentTarget.style.borderColor = '#ef4444'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)'; }}
+                                                onMouseEnter={e => {
+                                                    if (imp.can_delete === false) return;
+                                                    e.currentTarget.style.background = 'rgba(239,68,68,0.18)';
+                                                    e.currentTarget.style.borderColor = '#ef4444';
+                                                }}
+                                                onMouseLeave={e => {
+                                                    if (imp.can_delete === false) return;
+                                                    e.currentTarget.style.background = 'rgba(239,68,68,0.08)';
+                                                    e.currentTarget.style.borderColor = 'rgba(239,68,68,0.25)';
+                                                }}
+                                                disabled={imp.can_delete === false}
                                             >
-                                                Sil
+                                                {imp.can_delete === false ? 'Bilgi' : 'Sil'}
                                             </button>
                                         </td>
                                     </tr>
