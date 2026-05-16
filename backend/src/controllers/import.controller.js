@@ -870,6 +870,62 @@ const buildSyntheticImportEntries = async (userIdFilter = null) => {
         });
     }
 
+    if (!existingSourceTypes.has('google_ads')) {
+        const googleAdsWhere = {
+            import_id: { [Op.ne]: null },
+            platform: 'google_ads',
+        };
+        const [rowCount, lastUpdatedAt] = await Promise.all([
+            AdsData.count({ where: googleAdsWhere }),
+            AdsData.max('created_at', { where: googleAdsWhere }),
+        ]);
+
+        if (rowCount) {
+            syntheticEntries.push({
+                id: `${SYNTHETIC_IMPORT_ID_PREFIX}google_ads`,
+                user_id: userIdFilter || null,
+                file_name: 'legacy-database-record',
+                file_type: 'db',
+                source_type: 'google_ads',
+                row_count: rowCount,
+                error_count: 0,
+                status: 'completed',
+                created_at: lastUpdatedAt || new Date().toISOString(),
+                completed_at: lastUpdatedAt || new Date().toISOString(),
+                synthetic: true,
+                can_delete: false,
+            });
+        }
+    }
+
+    if (!existingSourceTypes.has('meta_ads')) {
+        const metaAdsWhere = {
+            import_id: { [Op.ne]: null },
+            platform: 'meta',
+        };
+        const [rowCount, lastUpdatedAt] = await Promise.all([
+            AdsData.count({ where: metaAdsWhere }),
+            AdsData.max('created_at', { where: metaAdsWhere }),
+        ]);
+
+        if (rowCount) {
+            syntheticEntries.push({
+                id: `${SYNTHETIC_IMPORT_ID_PREFIX}meta_ads`,
+                user_id: userIdFilter || null,
+                file_name: 'legacy-database-record',
+                file_type: 'db',
+                source_type: 'meta_ads',
+                row_count: rowCount,
+                error_count: 0,
+                status: 'completed',
+                created_at: lastUpdatedAt || new Date().toISOString(),
+                completed_at: lastUpdatedAt || new Date().toISOString(),
+                synthetic: true,
+                can_delete: false,
+            });
+        }
+    }
+
     return syntheticEntries;
 };
 

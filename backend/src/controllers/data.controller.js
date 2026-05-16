@@ -61,6 +61,16 @@ const getDatasetStat = async (model, label, where = {}, latestField = 'created_a
     };
 };
 
+const getLatestDate = (...values) => {
+    const validValues = values.filter(Boolean);
+    if (validValues.length === 0) return null;
+
+    return validValues.reduce((latest, current) => {
+        if (!latest) return current;
+        return new Date(current) > new Date(latest) ? current : latest;
+    }, null);
+};
+
 const getDataSummary = async (req, res) => {
     try {
         const [
@@ -142,6 +152,16 @@ const getDataSummary = async (req, res) => {
         ensureManualSourceSummary(manualSourcesMap, 'funnel', funnelStats.records, funnelStats.last_updated_at);
         ensureManualSourceSummary(manualSourcesMap, 'google_ads', manualAdsStats.records, manualAdsStats.last_updated_at);
 
+        const syntheticCompletedImports = Array.from(manualSourcesMap.values()).filter((row) => row.synthetic).length;
+        const effectiveLastManualImportAt = getLatestDate(
+            lastManualImportAt,
+            trafficStats.last_updated_at,
+            salesStats.last_updated_at,
+            funnelStats.last_updated_at,
+            manualAdsStats.last_updated_at,
+            customerStats.last_updated_at
+        );
+
         const apiSources = await Promise.all(
             integrationsRaw.map(async (integration) => {
                 const adsWhere = {
@@ -192,12 +212,12 @@ const getDataSummary = async (req, res) => {
                 total_records: manualRecords + apiRecords,
                 manual_records: manualRecords,
                 api_records: apiRecords,
-                completed_imports: completedImports,
+                completed_imports: completedImports + syntheticCompletedImports,
                 failed_imports: failedImports,
                 processing_imports: processingImports,
                 active_integrations: activeIntegrations,
                 total_integrations: totalIntegrations,
-                last_manual_import_at: lastManualImportAt,
+                last_manual_import_at: effectiveLastManualImportAt,
                 last_api_sync_at: lastApiSyncAt,
             },
             datasets,
