@@ -1,15 +1,19 @@
 /**
- * Database Cleanup Script
+ * Database Full-Reset Cleanup Script
  *
- * Resolves InnoDB "no space left on device" (OS error 28) failures caused by
- * accumulated data in import pipeline tables and cache tables.
+ * Resolves InnoDB "no space left on device" (OS error 28) by truncating
+ * EVERY table in the database, then running OPTIMIZE TABLE on all of them
+ * to reclaim fragmented space from the InnoDB tablespace.
  *
  * Usage: npm run cleanup
  *
- * Safe scope:
- * - Clears only import pipeline tables and KPI cache
- * - Leaves users and core analytics tables untouched
- * - Attempts OPTIMIZE TABLE afterwards to reclaim fragmented space
+ * Effect:
+ * - ALL rows in ALL tables are deleted (schema/structure is preserved)
+ * - Foreign key checks are disabled for the duration of the truncation
+ * - OPTIMIZE TABLE is run on every table afterwards to defragment InnoDB
+ * - Admin users will be recreated on next deploy via the seed script
+ *
+ * Expected space recovery: 4–5 GB
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
@@ -20,30 +24,39 @@ const { sequelize } = require('../config/database');
 // Load all models so Sequelize is fully initialised
 require('../models/index');
 
-const TRUNCATE_TABLES = [
+// Truncation order: child tables before parent tables so that even without
+// FK_CHECKS=0 the order would be safe. With FK_CHECKS=0 the order does not
+// matter, but keeping it explicit makes the intent clear.
+const ALL_TABLES = [
+    // Import pipeline — children of import_logs
     'import_raw_rows',
     'import_staging_rows',
-    'import_logs',
-    'kpi_cache',
-];
 
-const OPTIMIZE_TABLES = [
-    'users',
+    // Analytics data — children of import_logs
     'sales_data',
     'ads_data',
     'traffic_data',
     'campaign_data',
-    'funnel_data',
     'customer_data',
+    'funnel_data',
     'channel_mapping',
+
+    // UTM — utm_events is a child of utm_links
+    'utm_events',
+    'utm_links',
+
+    // User-owned data — children of users
+    'kpi_cache',
+    'audit_logs',
     'saved_views',
     'segments',
-    'audit_logs',
     'refresh_tokens',
     'report_schedules',
     'integrations',
-    'utm_links',
-    'utm_events',
+
+    // Parent tables last
+    'import_logs',
+    'users',
 ];
 
 const getDiskUsage = async () => {
@@ -77,10 +90,10 @@ const cleanupDB = async () => {
         await logDiskUsage('BEFORE');
         console.log();
 
-        console.log('🗑️ Ağır import/cache tabloları temizleniyor...');
+        console.log(`🗑️  Tüm tablolar temizleniyor (${ALL_TABLES.length} tablo)...`);
         await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-        for (const table of TRUNCATE_TABLES) {
+        for (const table of ALL_TABLES) {
             await sequelize.query(`TRUNCATE TABLE \`${table}\``);
             console.log(`   ✓ ${table} temizlendi`);
         }
@@ -88,8 +101,8 @@ const cleanupDB = async () => {
         await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
         console.log();
 
-        console.log('🔧 Kalan tablolar optimize ediliyor...');
-        for (const table of OPTIMIZE_TABLES) {
+        console.log('🔧 Tüm tablolar optimize ediliyor (fragmented space geri alınıyor)...');
+        for (const table of ALL_TABLES) {
             try {
                 await sequelize.query(`OPTIMIZE TABLE \`${table}\``);
                 console.log(`   ✓ ${table} optimize edildi`);
@@ -100,7 +113,7 @@ const cleanupDB = async () => {
         console.log();
 
         await logDiskUsage('AFTER');
-        console.log('\n🎉 Cleanup tamamlandı!');
+        console.log('\n🎉 Full reset tamamlandı! Admin kullanıcılar bir sonraki deploy\'da seed scripti tarafından yeniden oluşturulacak.');
         process.exit(0);
     } catch (error) {
         try {
