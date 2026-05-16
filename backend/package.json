@@ -1,6 +1,6 @@
 {
   "name": "kpi-dashboard-backend",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Pazarlama ve E-Ticaret KPI Dashboard — Backend API",
   "main": "server.js",
   "scripts": {
