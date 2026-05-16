@@ -160,7 +160,24 @@ export default function DataOverviewPage() {
                             <tbody>
                                 {data.manual_sources.map((item) => (
                                     <tr key={item.key}>
-                                        <td style={tableCellStyle}>{item.label}</td>
+                                        <td style={tableCellStyle}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                <span>{item.label}</span>
+                                                {item.inferred_from_data && (
+                                                    <span style={{
+                                                        fontSize: '11px',
+                                                        fontWeight: 700,
+                                                        color: '#2563eb',
+                                                        background: 'rgba(37,99,235,0.12)',
+                                                        border: '1px solid rgba(37,99,235,0.22)',
+                                                        padding: '3px 7px',
+                                                        borderRadius: '999px'
+                                                    }}>
+                                                        veritabaninda bulundu
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td style={tableCellStyle}>{formatNumber(item.import_count)}</td>
                                         <td style={tableCellStyle}>{formatNumber(item.row_count)}</td>
                                         <td style={tableCellStyle}>{formatNumber(item.failed_count)}</td>

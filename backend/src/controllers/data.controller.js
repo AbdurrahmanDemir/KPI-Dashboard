@@ -31,23 +31,6 @@ const PLATFORM_LABELS = {
 
 const toNumber = (value) => Number(value || 0);
 
-const ensureManualSourceSummary = (map, sourceType, rowCount, lastImportAt) => {
-    if (!rowCount || map.has(sourceType)) return;
-
-    map.set(sourceType, {
-        key: sourceType,
-        label: MANUAL_SOURCE_LABELS[sourceType] || sourceType,
-        import_count: 1,
-        completed_count: 1,
-        failed_count: 0,
-        pending_count: 0,
-        row_count: rowCount,
-        error_count: 0,
-        last_import_at: lastImportAt,
-        synthetic: true,
-    });
-};
-
 const getDatasetStat = async (model, label, where = {}, latestField = 'created_at') => {
     const [records, lastUpdatedAt] = await Promise.all([
         model.count({ where }),
@@ -71,6 +54,45 @@ const getLatestDate = (...values) => {
     }, null);
 };
 
+const upsertManualSourceSummaryFromData = (map, sourceType, rowCount, lastImportAt) => {
+    if (!rowCount) return false;
+
+    const current = map.get(sourceType);
+    if (!current) {
+        map.set(sourceType, {
+            key: sourceType,
+            label: MANUAL_SOURCE_LABELS[sourceType] || sourceType,
+            import_count: 1,
+            completed_count: 1,
+            failed_count: 0,
+            pending_count: 0,
+            row_count: rowCount,
+            error_count: 0,
+            last_import_at: lastImportAt,
+            synthetic: true,
+            inferred_from_data: true,
+        });
+        return true;
+    }
+
+    const nextRowCount = Math.max(current.row_count || 0, rowCount);
+    const nextLastImportAt = getLatestDate(current.last_import_at, lastImportAt);
+    const shouldBackfill = (current.completed_count || 0) === 0 || (current.row_count || 0) < rowCount;
+
+    current.row_count = nextRowCount;
+    current.last_import_at = nextLastImportAt;
+
+    if (shouldBackfill) {
+        current.synthetic = true;
+        current.inferred_from_data = true;
+        current.completed_count = Math.max(current.completed_count || 0, 1);
+        current.import_count = Math.max(current.import_count || 0, current.completed_count);
+    }
+
+    map.set(sourceType, current);
+    return shouldBackfill;
+};
+
 const getDataSummary = async (req, res) => {
     try {
         const [
@@ -84,6 +106,8 @@ const getDataSummary = async (req, res) => {
             trafficStats,
             salesStats,
             funnelStats,
+            manualGoogleAdsStats,
+            manualMetaAdsStats,
             manualAdsStats,
             apiAdsStats,
             campaignStats,
@@ -101,6 +125,8 @@ const getDataSummary = async (req, res) => {
             getDatasetStat(TrafficData, 'Trafik Verisi', {}, 'created_at'),
             getDatasetStat(SalesData, 'Satis Verisi', {}, 'created_at'),
             getDatasetStat(FunnelData, 'Funnel Verisi', {}, 'created_at'),
+            getDatasetStat(AdsData, 'Google Ads Dosya Importu', { import_id: { [Op.ne]: null }, platform: 'google_ads' }, 'created_at'),
+            getDatasetStat(AdsData, 'Meta Ads Dosya Importu', { import_id: { [Op.ne]: null }, platform: 'meta' }, 'created_at'),
             getDatasetStat(AdsData, 'Reklam Verisi (Manuel Import)', { import_id: { [Op.ne]: null } }, 'created_at'),
             getDatasetStat(AdsData, 'Reklam Verisi (API / Test)', { import_id: null }, 'created_at'),
             getDatasetStat(CampaignData, 'Kampanya Kayitlari (API)', {}, 'updated_at'),
@@ -146,18 +172,23 @@ const getDataSummary = async (req, res) => {
             manualSourcesMap.set(row.source_type, current);
         }
 
-        ensureManualSourceSummary(manualSourcesMap, 'sales', salesStats.records, salesStats.last_updated_at);
-        ensureManualSourceSummary(manualSourcesMap, 'google_analytics', trafficStats.records, trafficStats.last_updated_at);
-        ensureManualSourceSummary(manualSourcesMap, 'customers', customerStats.records, customerStats.last_updated_at);
-        ensureManualSourceSummary(manualSourcesMap, 'funnel', funnelStats.records, funnelStats.last_updated_at);
-        ensureManualSourceSummary(manualSourcesMap, 'google_ads', manualAdsStats.records, manualAdsStats.last_updated_at);
+        upsertManualSourceSummaryFromData(manualSourcesMap, 'sales', salesStats.records, salesStats.last_updated_at);
+        upsertManualSourceSummaryFromData(manualSourcesMap, 'google_analytics', trafficStats.records, trafficStats.last_updated_at);
+        upsertManualSourceSummaryFromData(manualSourcesMap, 'customers', customerStats.records, customerStats.last_updated_at);
+        upsertManualSourceSummaryFromData(manualSourcesMap, 'funnel', funnelStats.records, funnelStats.last_updated_at);
+        upsertManualSourceSummaryFromData(manualSourcesMap, 'google_ads', manualGoogleAdsStats.records, manualGoogleAdsStats.last_updated_at);
+        upsertManualSourceSummaryFromData(manualSourcesMap, 'meta_ads', manualMetaAdsStats.records, manualMetaAdsStats.last_updated_at);
 
-        const syntheticCompletedImports = Array.from(manualSourcesMap.values()).filter((row) => row.synthetic).length;
+        const syntheticCompletedImports = Array.from(manualSourcesMap.values())
+            .filter((row) => row.synthetic && row.completed_count > 0)
+            .length;
         const effectiveLastManualImportAt = getLatestDate(
             lastManualImportAt,
             trafficStats.last_updated_at,
             salesStats.last_updated_at,
             funnelStats.last_updated_at,
+            manualGoogleAdsStats.last_updated_at,
+            manualMetaAdsStats.last_updated_at,
             manualAdsStats.last_updated_at,
             customerStats.last_updated_at
         );

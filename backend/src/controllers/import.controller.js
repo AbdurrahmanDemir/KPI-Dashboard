@@ -40,6 +40,30 @@ const resolveTargetModel = (sourceType) => {
 const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData, CampaignData, ChannelMapping, CustomerData, ImportRawRow, ImportStagingRow];
 const MAX_STORED_IMPORT_ERRORS = 500;
 const SYNTHETIC_IMPORT_ID_PREFIX = 'synthetic-';
+const MANUAL_SOURCE_DEFINITIONS = [
+    { source_type: 'sales', file_type: 'db', model: SalesData },
+    { source_type: 'google_analytics', file_type: 'db', model: TrafficData },
+    { source_type: 'customers', file_type: 'db', model: CustomerData },
+    { source_type: 'funnel', file_type: 'db', model: FunnelData },
+    {
+        source_type: 'google_ads',
+        file_type: 'db',
+        model: AdsData,
+        where: {
+            import_id: { [Op.ne]: null },
+            platform: 'google_ads',
+        },
+    },
+    {
+        source_type: 'meta_ads',
+        file_type: 'db',
+        model: AdsData,
+        where: {
+            import_id: { [Op.ne]: null },
+            platform: 'meta',
+        },
+    },
+];
 
 const toNumber = (value) => {
     if (value === null || value === undefined || value === '') return null;
@@ -827,32 +851,47 @@ const writeAudit = async (req, action, entityId, payload = {}) => {
 };
 
 const buildSyntheticImportEntries = async (userIdFilter = null) => {
-    const syntheticSources = [
-        { source_type: 'sales', file_type: 'db', model: SalesData },
-        { source_type: 'google_analytics', file_type: 'db', model: TrafficData },
-        { source_type: 'customers', file_type: 'db', model: CustomerData },
-        { source_type: 'funnel', file_type: 'db', model: FunnelData },
-    ];
-
     const userWhere = userIdFilter ? { user_id: userIdFilter } : {};
     const importLogs = await ImportLog.findAll({
-        attributes: ['source_type'],
+        attributes: ['source_type', 'status', 'row_count', 'created_at'],
         where: userWhere,
         raw: true,
     });
-    const existingSourceTypes = new Set(importLogs.map((row) => row.source_type));
+    const sourceSummaries = importLogs.reduce((acc, row) => {
+        const current = acc.get(row.source_type) || {
+            completed_row_count: 0,
+            has_completed: false,
+            latest_logged_at: null,
+        };
+
+        if (row.status === 'completed') {
+            current.has_completed = true;
+            current.completed_row_count += Number(row.row_count || 0);
+        }
+
+        if (!current.latest_logged_at || new Date(row.created_at) > new Date(current.latest_logged_at)) {
+            current.latest_logged_at = row.created_at;
+        }
+
+        acc.set(row.source_type, current);
+        return acc;
+    }, new Map());
 
     const syntheticEntries = [];
 
-    for (const source of syntheticSources) {
-        if (existingSourceTypes.has(source.source_type)) continue;
-
+    for (const source of MANUAL_SOURCE_DEFINITIONS) {
         const [rowCount, lastUpdatedAt] = await Promise.all([
-            source.model.count(),
-            source.model.max('created_at'),
+            source.model.count({ where: source.where || {} }),
+            source.model.max('created_at', { where: source.where || {} }),
         ]);
 
         if (!rowCount) continue;
+        const summary = sourceSummaries.get(source.source_type);
+        const missingRowCount = summary?.has_completed
+            ? Math.max(0, rowCount - summary.completed_row_count)
+            : rowCount;
+
+        if (!missingRowCount) continue;
 
         syntheticEntries.push({
             id: `${SYNTHETIC_IMPORT_ID_PREFIX}${source.source_type}`,
@@ -860,70 +899,15 @@ const buildSyntheticImportEntries = async (userIdFilter = null) => {
             file_name: 'legacy-database-record',
             file_type: source.file_type,
             source_type: source.source_type,
-            row_count: rowCount,
+            row_count: missingRowCount,
             error_count: 0,
             status: 'completed',
             created_at: lastUpdatedAt || new Date().toISOString(),
             completed_at: lastUpdatedAt || new Date().toISOString(),
             synthetic: true,
             can_delete: false,
+            synthetic_reason: summary?.has_completed ? 'db-backfill-missing-rows' : 'db-backfill-no-log',
         });
-    }
-
-    if (!existingSourceTypes.has('google_ads')) {
-        const googleAdsWhere = {
-            import_id: { [Op.ne]: null },
-            platform: 'google_ads',
-        };
-        const [rowCount, lastUpdatedAt] = await Promise.all([
-            AdsData.count({ where: googleAdsWhere }),
-            AdsData.max('created_at', { where: googleAdsWhere }),
-        ]);
-
-        if (rowCount) {
-            syntheticEntries.push({
-                id: `${SYNTHETIC_IMPORT_ID_PREFIX}google_ads`,
-                user_id: userIdFilter || null,
-                file_name: 'legacy-database-record',
-                file_type: 'db',
-                source_type: 'google_ads',
-                row_count: rowCount,
-                error_count: 0,
-                status: 'completed',
-                created_at: lastUpdatedAt || new Date().toISOString(),
-                completed_at: lastUpdatedAt || new Date().toISOString(),
-                synthetic: true,
-                can_delete: false,
-            });
-        }
-    }
-
-    if (!existingSourceTypes.has('meta_ads')) {
-        const metaAdsWhere = {
-            import_id: { [Op.ne]: null },
-            platform: 'meta',
-        };
-        const [rowCount, lastUpdatedAt] = await Promise.all([
-            AdsData.count({ where: metaAdsWhere }),
-            AdsData.max('created_at', { where: metaAdsWhere }),
-        ]);
-
-        if (rowCount) {
-            syntheticEntries.push({
-                id: `${SYNTHETIC_IMPORT_ID_PREFIX}meta_ads`,
-                user_id: userIdFilter || null,
-                file_name: 'legacy-database-record',
-                file_type: 'db',
-                source_type: 'meta_ads',
-                row_count: rowCount,
-                error_count: 0,
-                status: 'completed',
-                created_at: lastUpdatedAt || new Date().toISOString(),
-                completed_at: lastUpdatedAt || new Date().toISOString(),
-                synthetic: true,
-                can_delete: false,
-            });
-        }
     }
 
     return syntheticEntries;
