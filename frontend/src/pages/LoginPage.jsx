@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 
 export default function LoginPage() {
+    const appVersion = __APP_VERSION__;
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -174,7 +175,7 @@ export default function LoginPage() {
                 </div>
 
                 <p style={styles.footer}>
-                    Sporthink · KPI Dashboard v2.0
+                    Sporthink · KPI Dashboard v{appVersion}
                 </p>
             </div>
         </div>

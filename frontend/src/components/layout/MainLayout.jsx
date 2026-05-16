@@ -25,6 +25,7 @@ import {
 } from '@tabler/icons-react';
 
 export default function MainLayout({ children }) {
+    const appVersion = __APP_VERSION__;
     const { user, logout } = useAuthStore();
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -221,6 +222,10 @@ export default function MainLayout({ children }) {
                             </Link>
                         );
                     })}
+                </div>
+
+                <div style={{ padding: '12px 16px 16px', borderTop: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '12px' }}>
+                    Sürüm: v{appVersion}
                 </div>
             </aside>
 
