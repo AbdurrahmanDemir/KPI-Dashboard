@@ -38,6 +38,7 @@ const resolveTargetModel = (sourceType) => {
 };
 
 const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData, CampaignData, ChannelMapping, CustomerData, ImportRawRow, ImportStagingRow];
+const MAX_STORED_IMPORT_ERRORS = 500;
 
 const toNumber = (value) => {
     if (value === null || value === undefined || value === '') return null;
@@ -782,7 +783,7 @@ const validateImport = async (req, res) => {
             status: nextStatus,
             row_count: analysis.rowCount,
             error_count: analysis.errors.length,
-            error_detail: analysis.errors
+            error_detail: analysis.errors.slice(0, MAX_STORED_IMPORT_ERRORS)
         });
 
         await writeAudit(req, 'import_validate', importLog.id, { row_count: analysis.rowCount, error_count: analysis.errors.length });
@@ -801,6 +802,7 @@ const validateImport = async (req, res) => {
         if (err.message === 'FILE_NOT_FOUND') {
             return errorResponse(res, 404, 'FILE_NOT_FOUND', 'Dosya sunucuda bulunamadi.');
         }
+        console.error('[IMPORT] Validate hatasi:', err);
         return errorResponse(res, 500, 'INTERNAL_ERROR', 'Dogrulama hatasi.');
     }
 };
@@ -899,7 +901,7 @@ const commitImport = async (req, res) => {
                 status: 'failed',
                 row_count: analysis.rowCount,
                 error_count: analysis.errors.length,
-                error_detail: analysis.errors.slice(0, 500) // JSON boyutunu sinirla
+                error_detail: analysis.errors.slice(0, MAX_STORED_IMPORT_ERRORS) // JSON boyutunu sinirla
             });
             return errorResponse(res, 422, 'NO_VALID_RECORDS', 'Gecerli satir bulunamadi, tum satirlar hatali.', analysis.errors.slice(0, 20));
         }
@@ -914,7 +916,7 @@ const commitImport = async (req, res) => {
             completed_at: new Date(),
             row_count: analysis.rowCount,
             error_count: analysis.errors.length,
-            error_detail: analysis.errors.slice(0, 500) // JSON boyutunu sinirla
+            error_detail: analysis.errors.slice(0, MAX_STORED_IMPORT_ERRORS) // JSON boyutunu sinirla
         });
 
         await writeAudit(req, 'import_commit', importLog.id, {
