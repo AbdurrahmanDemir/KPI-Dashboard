@@ -16,6 +16,7 @@ const apiLogger = require('./src/middleware/apiLogger');
 const { startReportScheduler } = require('./src/services/reportScheduler.service');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 const publicServerUrl = process.env.PUBLIC_BACKEND_URL || `http://localhost:${PORT}`;
 
