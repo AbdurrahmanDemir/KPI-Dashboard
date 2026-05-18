@@ -5,7 +5,7 @@ const options = {
         openapi: '3.0.0',
         info: {
             title: 'KPI Dashboard API',
-            version: '2.0.7',
+            version: '2.0.8',
             description: 'Pazarlama ve E-Ticaret KPI Dashboard REST API Dokümantasyonu',
             contact: {
                 name: 'Sporthink',
