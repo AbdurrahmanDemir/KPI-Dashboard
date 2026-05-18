@@ -26,6 +26,18 @@ const getFileType = (filename) => {
     return null;
 };
 
+const normalizeHeaderKey = (value = '') =>
+    String(value)
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+
+const isProductCatalogFile = (headers = []) => {
+    const normalizedHeaders = new Set(headers.map(normalizeHeaderKey));
+    const requiredCatalogHeaders = ['sku', 'productname', 'category', 'price', 'stockquantity'];
+    return requiredCatalogHeaders.every((header) => normalizedHeaders.has(header));
+};
+
 const resolveTargetModel = (sourceType) => {
     if (sourceType === 'sales' || sourceType === 'order_items') return SalesData;
     if (sourceType === 'google_analytics' || sourceType === 'ga4_items') return TrafficData;
@@ -958,7 +970,25 @@ const uploadFile = async (req, res) => {
         const fileType = getFileType(req.file.originalname);
         const headers = await parseHeadersFromUpload(req.file.filename, fileType);
         const detectedSourceType = detectSourceType(headers);
-        const sourceType = detectedSourceType || req.body.source_type || 'sales';
+        const sourceType = detectedSourceType || req.body.source_type;
+
+        if (!sourceType) {
+            if (isProductCatalogFile(headers)) {
+                return errorResponse(
+                    res,
+                    400,
+                    'UNSUPPORTED_SOURCE_TYPE',
+                    'products.csv urun katalog dosyasi su anda import modulunde desteklenmiyor. Bu ekranda yalnizca satis, siparis kalemleri, trafik, reklam, kampanya, musteri, kanal eslestirme ve funnel verileri yuklenebilir.'
+                );
+            }
+
+            return errorResponse(
+                res,
+                400,
+                'UNSUPPORTED_SOURCE_TYPE',
+                'Dosya tipi otomatik olarak taninamadi. Desteklenen veri kaynaklarindan birine ait kolon basliklari bekleniyor.'
+            );
+        }
 
         const importLog = await ImportLog.create({
             user_id: req.user.id,
