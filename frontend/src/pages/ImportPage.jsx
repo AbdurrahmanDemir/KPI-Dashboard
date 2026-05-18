@@ -1,6 +1,7 @@
 ﻿import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
 // â”€â”€â”€ Status helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -400,6 +401,7 @@ const ImportHistory = ({ onRefresh }) => {
 
 // â”€â”€â”€ Main Import Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function ImportPage() {
+    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('new'); // 'new' | 'history'
     const [historyKey, setHistoryKey] = useState(0); // force re-fetch after commit
 
@@ -455,6 +457,11 @@ export default function ImportPage() {
         setError(null);
         setMessage(successMessage);
     };
+
+    const refreshAnalyticsViews = useCallback(async () => {
+        await queryClient.invalidateQueries();
+        setHistoryKey((k) => k + 1);
+    }, [queryClient]);
 
     const onDrop = useCallback(async (acceptedFiles) => {
         if (acceptedFiles.length === 0) return;
@@ -522,9 +529,9 @@ export default function ImportPage() {
         try {
             setIsCommitting(true);
             await api.post(`/imports/${importId}/commit`);
+            await refreshAnalyticsViews();
             setStep(4);
             setMessage('Import başarıyla tamamlandı.');
-            setHistoryKey(k => k + 1); // refresh history
         } catch (err) {
             setError(err.response?.data?.error?.message || 'Veri kaydedilirken hata oluştu.');
         } finally {
@@ -848,7 +855,7 @@ export default function ImportPage() {
 
             {/* â”€â”€ History Tab â”€â”€ */}
             {activeTab === 'history' && (
-                <ImportHistory key={historyKey} onRefresh={() => setHistoryKey(k => k + 1)} />
+                <ImportHistory key={historyKey} onRefresh={refreshAnalyticsViews} />
             )}
         </div>
     );
