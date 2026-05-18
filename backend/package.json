@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node src/seeders/run.js",
     "db:sync": "node src/scripts/syncDB.js",
-    "cleanup": "node src/scripts/cleanupDB.js"
+    "cleanup": "node src/scripts/cleanupDB.js",
+    "cleanup:imports": "node src/scripts/cleanupImports.js"
   },
   "keywords": [
     "kpi",
