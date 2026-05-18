@@ -1,6 +1,6 @@
 {
   "name": "kpi-dashboard-backend",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Pazarlama ve E-Ticaret KPI Dashboard — Backend API",
   "main": "server.js",
   "scripts": {
@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node src/seeders/run.js",
     "db:sync": "node src/scripts/syncDB.js",
-    "cleanup": "node src/scripts/cleanupDB.js"
+    "cleanup": "node src/scripts/cleanupDB.js",
+    "cleanup:imports": "node src/scripts/cleanupDB.js"
   },
   "keywords": [
     "kpi",

@@ -1,15 +1,28 @@
 /**
- * Database Cleanup Script
+ * Import Data Cleanup Script
  *
- * Resolves InnoDB "no space left on device" (OS error 28) failures caused by
- * accumulated data in import pipeline tables and cache tables.
+ * Removes imported and derived analytics data so the app can be reused with a
+ * clean dataset while keeping accounts and configuration intact.
  *
- * Usage: npm run cleanup
+ * Usage:
+ * - npm run cleanup
+ * - npm run cleanup:imports
  *
- * Safe scope:
- * - Clears only import pipeline tables and KPI cache
- * - Leaves users and core analytics tables untouched
- * - Attempts OPTIMIZE TABLE afterwards to reclaim fragmented space
+ * Preserves:
+ * - users
+ * - audit_logs
+ * - saved_views
+ * - segments
+ * - refresh_tokens
+ * - report_schedules
+ * - integrations
+ * - utm_links
+ * - utm_events
+ *
+ * Removes:
+ * - imported dataset tables
+ * - import pipeline tables
+ * - kpi cache
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
@@ -17,10 +30,17 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const { QueryTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
-// Load all models so Sequelize is fully initialised
+// Load all models so Sequelize is fully initialised.
 require('../models/index');
 
 const TRUNCATE_TABLES = [
+    'sales_data',
+    'ads_data',
+    'traffic_data',
+    'campaign_data',
+    'funnel_data',
+    'customer_data',
+    'channel_mapping',
     'import_raw_rows',
     'import_staging_rows',
     'import_logs',
@@ -29,13 +49,6 @@ const TRUNCATE_TABLES = [
 
 const OPTIMIZE_TABLES = [
     'users',
-    'sales_data',
-    'ads_data',
-    'traffic_data',
-    'campaign_data',
-    'funnel_data',
-    'customer_data',
-    'channel_mapping',
     'saved_views',
     'segments',
     'audit_logs',
@@ -64,53 +77,52 @@ const getDiskUsage = async () => {
 
 const logDiskUsage = async (label) => {
     const usage = await getDiskUsage();
-    console.log(
-        `📊 [${label}] Allocated: ${usage.total_mb} MB | Fragmented: ${usage.free_mb} MB`
-    );
+    console.log(`[${label}] Allocated: ${usage.total_mb} MB | Fragmented: ${usage.free_mb} MB`);
 };
 
 const cleanupDB = async () => {
     try {
         await sequelize.authenticate();
-        console.log('✅ Veritabanı bağlantısı başarılı.\n');
+        console.log('Database connection successful.\n');
 
         await logDiskUsage('BEFORE');
         console.log();
 
-        console.log('🗑️ Ağır import/cache tabloları temizleniyor...');
+        console.log('Removing imported data, import logs, and KPI cache...');
         await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
         for (const table of TRUNCATE_TABLES) {
             await sequelize.query(`TRUNCATE TABLE \`${table}\``);
-            console.log(`   ✓ ${table} temizlendi`);
+            console.log(`   cleared ${table}`);
         }
 
         await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
         console.log();
 
-        console.log('🔧 Kalan tablolar optimize ediliyor...');
+        console.log('Optimizing preserved tables...');
         for (const table of OPTIMIZE_TABLES) {
             try {
                 await sequelize.query(`OPTIMIZE TABLE \`${table}\``);
-                console.log(`   ✓ ${table} optimize edildi`);
+                console.log(`   optimized ${table}`);
             } catch (error) {
-                console.warn(`   ⚠ ${table} optimize edilemedi: ${error.message}`);
+                console.warn(`   could not optimize ${table}: ${error.message}`);
             }
         }
         console.log();
 
         await logDiskUsage('AFTER');
-        console.log('\n🎉 Cleanup tamamlandı!');
+        console.log('\nImport cleanup completed.');
         process.exit(0);
     } catch (error) {
         try {
             await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
         } catch (_) {
-            // ignore secondary cleanup failure
+            // Ignore secondary cleanup failure.
         }
-        console.error('❌ Cleanup hatası:', error.message);
+
+        console.error('Cleanup failed:', error.message);
         if (error.parent) {
-            console.error('   SQL Hatası:', error.parent.sqlMessage || error.parent.message);
+            console.error('   SQL error:', error.parent.sqlMessage || error.parent.message);
         }
         process.exit(1);
     }
