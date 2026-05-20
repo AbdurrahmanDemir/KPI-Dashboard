@@ -53,6 +53,17 @@ const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData, CampaignData
 const MAX_STORED_IMPORT_ERRORS = 500;
 const SYNTHETIC_IMPORT_ID_PREFIX = 'synthetic-';
 const LEGACY_IMPORT_FILE_TYPE = 'legacy';
+const IMPORT_LIST_ATTRIBUTES = [
+    'id',
+    'user_id',
+    'file_name',
+    'file_type',
+    'source_type',
+    'row_count',
+    'error_count',
+    'status',
+    'created_at',
+];
 const MANUAL_SOURCE_DEFINITIONS = [
     { source_type: 'sales', file_type: LEGACY_IMPORT_FILE_TYPE, model: SalesData },
     { source_type: 'google_analytics', file_type: LEGACY_IMPORT_FILE_TYPE, model: TrafficData },
@@ -941,6 +952,7 @@ const listImports = async (req, res) => {
         const where = req.user.role === 'admin' ? {} : { user_id: req.user.id };
 
         const rows = await ImportLog.findAll({
+            attributes: IMPORT_LIST_ATTRIBUTES,
             where,
             order: [['created_at', 'DESC']],
             raw: true,
