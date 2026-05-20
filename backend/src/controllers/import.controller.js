@@ -52,14 +52,15 @@ const resolveTargetModel = (sourceType) => {
 const IMPORT_MODELS = [SalesData, AdsData, TrafficData, FunnelData, CampaignData, ChannelMapping, CustomerData, ImportRawRow, ImportStagingRow];
 const MAX_STORED_IMPORT_ERRORS = 500;
 const SYNTHETIC_IMPORT_ID_PREFIX = 'synthetic-';
+const LEGACY_IMPORT_FILE_TYPE = 'legacy';
 const MANUAL_SOURCE_DEFINITIONS = [
-    { source_type: 'sales', file_type: 'db', model: SalesData },
-    { source_type: 'google_analytics', file_type: 'db', model: TrafficData },
-    { source_type: 'customers', file_type: 'db', model: CustomerData },
-    { source_type: 'funnel', file_type: 'db', model: FunnelData },
+    { source_type: 'sales', file_type: LEGACY_IMPORT_FILE_TYPE, model: SalesData },
+    { source_type: 'google_analytics', file_type: LEGACY_IMPORT_FILE_TYPE, model: TrafficData },
+    { source_type: 'customers', file_type: LEGACY_IMPORT_FILE_TYPE, model: CustomerData },
+    { source_type: 'funnel', file_type: LEGACY_IMPORT_FILE_TYPE, model: FunnelData },
     {
         source_type: 'google_ads',
-        file_type: 'db',
+        file_type: LEGACY_IMPORT_FILE_TYPE,
         model: AdsData,
         where: {
             import_id: { [Op.ne]: null },
@@ -68,7 +69,7 @@ const MANUAL_SOURCE_DEFINITIONS = [
     },
     {
         source_type: 'meta_ads',
-        file_type: 'db',
+        file_type: LEGACY_IMPORT_FILE_TYPE,
         model: AdsData,
         where: {
             import_id: { [Op.ne]: null },
@@ -892,10 +893,18 @@ const buildSyntheticImportEntries = async (userIdFilter = null) => {
     const syntheticEntries = [];
 
     for (const source of MANUAL_SOURCE_DEFINITIONS) {
-        const [rowCount, lastUpdatedAt] = await Promise.all([
-            source.model.count({ where: source.where || {} }),
-            source.model.max('created_at', { where: source.where || {} }),
-        ]);
+        let rowCount = 0;
+        let lastUpdatedAt = null;
+
+        try {
+            [rowCount, lastUpdatedAt] = await Promise.all([
+                source.model.count({ where: source.where || {} }),
+                source.model.max('created_at', { where: source.where || {} }),
+            ]);
+        } catch (err) {
+            console.error(`[IMPORT LIST] Synthetic ${source.source_type} summary failed:`, err.message);
+            continue;
+        }
 
         if (!rowCount) continue;
         const summary = sourceSummaries.get(source.source_type);
@@ -927,8 +936,8 @@ const buildSyntheticImportEntries = async (userIdFilter = null) => {
 
 const listImports = async (req, res) => {
     try {
-        const page = parseInt(req.query.page || '1', 10);
-        const limit = parseInt(req.query.limit || '20', 10);
+        const page = Math.max(parseInt(req.query.page || '1', 10) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10) || 20, 1), 100);
         const where = req.user.role === 'admin' ? {} : { user_id: req.user.id };
 
         const rows = await ImportLog.findAll({
@@ -946,6 +955,7 @@ const listImports = async (req, res) => {
 
         return paginatedResponse(res, pagedRows, page, limit, total);
     } catch (err) {
+        console.error('[IMPORT LIST] Error:', err);
         return errorResponse(res, 500, 'INTERNAL_ERROR', 'Import listesi getirilemedi.');
     }
 };

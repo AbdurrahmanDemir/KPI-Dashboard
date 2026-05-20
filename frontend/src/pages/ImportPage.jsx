@@ -26,6 +26,17 @@ const SOURCE_LABEL = {
     funnel:           'Funnel Verisi',
 };
 
+const FILE_TYPE_LABEL = {
+    csv: 'CSV',
+    xlsx: 'XLSX',
+    json: 'JSON',
+    db: 'Mevcut Veri',
+    legacy: 'Mevcut Veri',
+};
+
+const formatFileType = (fileType) =>
+    FILE_TYPE_LABEL[fileType] || String(fileType || 'Bilinmiyor').toUpperCase();
+
 const StatusBadge = ({ status }) => {
     const s = STATUS_MAP[status] || { label: status, color: '#6b7280', bg: 'rgba(107,114,128,0.12)' };
     return (
@@ -74,7 +85,7 @@ const DeleteModal = ({ importItem, onConfirm, onCancel, loading }) => (
                     {SOURCE_LABEL[importItem?.source_type] || importItem?.source_type}
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                    {importItem?.row_count?.toLocaleString()} satır · {importItem?.file_type?.toUpperCase()} ·{' '}
+                    {importItem?.row_count?.toLocaleString()} satır · {formatFileType(importItem?.file_type)} ·{' '}
                     {new Date(importItem?.created_at).toLocaleString('tr-TR')}
                 </div>
             </div>
@@ -143,10 +154,11 @@ const ImportHistory = ({ onRefresh }) => {
         setError(null);
         try {
             const res = await api.get(`/imports?page=${p}&limit=10`);
-            setImports(res.data.data || []);
+            const rows = Array.isArray(res.data.data) ? res.data.data : [];
+            setImports(rows);
             setPagination(res.data.meta || null);
-        } catch {
-            setError('Import geçmişi yüklenemedi.');
+        } catch (err) {
+            setError(err.response?.data?.error?.message || 'Import geçmişi yüklenemedi.');
         } finally {
             setLoading(false);
         }
@@ -314,7 +326,7 @@ const ImportHistory = ({ onRefresh }) => {
                                                 background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)',
                                                 border: '1px solid var(--color-border)', textTransform: 'uppercase',
                                             }}>
-                                                {imp.file_type}
+                                                {formatFileType(imp.file_type)}
                                             </span>
                                         </td>
                                         <td style={{ padding: '14px 16px', color: 'var(--color-text-primary)' }}>
